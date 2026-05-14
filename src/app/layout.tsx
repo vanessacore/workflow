@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   title: "Vanessa Core — Product Designer · AI & Wearables",
   description:
     "Portfolio of Vanessa Core, a product designer crafting AI experiences and next-generation wearables at Meta. Cinematic interfaces, ambient intelligence, and the future of human–computer interaction.",
-  metadataBase: new URL("https://vanessahuh.co"),
+  metadataBase: new URL("https://vanessahuh.com"),
   openGraph: {
     title: "Vanessa Core — Product Designer · AI & Wearables",
     description:
