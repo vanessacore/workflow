@@ -67,7 +67,7 @@ function Spheres({
                 ? undefined
                 : {
                     scale: [1, 1 + s.amp, 1],
-                    opacity: [0.65, 1, 0.65],
+                    opacity: [0.35, 1, 0.35],
                   }
             }
             transition={{
@@ -96,47 +96,47 @@ export function Atmosphere() {
 
   const stars = useMemo(() => seededStars(160, 1337), []);
 
-  const nearScale = useTransform(smooth, [0, 1], [1, 1.55]);
-  const nearY = useTransform(smooth, [0, 1], ["0%", "-14%"]);
-  const nearX = useTransform(smooth, [0, 1], ["0%", "8%"]);
-  const nearOpacity = useTransform(smooth, [0, 0.7, 1], [1, 0.85, 0.7]);
+  const nearScale = useTransform(smooth, [0, 1], [1, 1.9]);
+  const nearY = useTransform(smooth, [0, 1], ["0%", "-22%"]);
+  const nearX = useTransform(smooth, [0, 1], ["0%", "12%"]);
+  const nearOpacity = useTransform(smooth, [0, 0.5, 1], [1, 0.75, 0.55]);
 
-  const midScale = useTransform(smooth, [0, 1], [1.05, 1.25]);
-  const midY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
-  const midX = useTransform(smooth, [0, 1], ["0%", "-5%"]);
+  const midScale = useTransform(smooth, [0, 1], [1, 1.4]);
+  const midY = useTransform(smooth, [0, 1], ["0%", "-12%"]);
+  const midX = useTransform(smooth, [0, 1], ["0%", "-9%"]);
 
-  const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
-  const farX = useTransform(smooth, [0, 1], ["0%", "2%"]);
+  const farY = useTransform(smooth, [0, 1], ["0%", "-6%"]);
+  const farX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
-  const revealOpacity = useTransform(smooth, [0, 0.25, 0.6, 1], [0, 0.4, 0.95, 1]);
-  const revealScale = useTransform(smooth, [0, 1], [0.85, 1.1]);
+  const revealOpacity = useTransform(smooth, [0, 0.15, 0.5, 1], [0, 0.55, 1, 1]);
+  const revealScale = useTransform(smooth, [0, 1], [0.7, 1.25]);
 
   const nearSpheres: Sphere[] = [
     {
       className:
         "absolute left-1/2 top-[-12%] h-[64rem] w-[64rem] -translate-x-1/2",
       background:
-        "radial-gradient(circle, rgba(160,140,255,0.22), rgba(160,140,255,0) 62%)",
-      duration: 9,
+        "radial-gradient(circle, rgba(160,140,255,0.32), rgba(160,140,255,0) 62%)",
+      duration: 7,
       delay: 0,
-      amp: 0.08,
+      amp: 0.22,
     },
     {
       className: "absolute left-[-14%] top-[32%] h-[42rem] w-[42rem]",
       background:
-        "radial-gradient(circle, rgba(80,180,255,0.18), rgba(80,180,255,0) 62%)",
-      duration: 11,
-      delay: 1.4,
-      amp: 0.1,
+        "radial-gradient(circle, rgba(80,180,255,0.28), rgba(80,180,255,0) 62%)",
+      duration: 8,
+      delay: 1.2,
+      amp: 0.25,
     },
     {
       className:
         "absolute right-[-14%] bottom-[-10%] h-[52rem] w-[52rem]",
       background:
-        "radial-gradient(circle, rgba(255,120,200,0.16), rgba(255,120,200,0) 62%)",
-      duration: 13,
-      delay: 2.2,
-      amp: 0.09,
+        "radial-gradient(circle, rgba(255,120,200,0.26), rgba(255,120,200,0) 62%)",
+      duration: 9,
+      delay: 2.4,
+      amp: 0.24,
     },
   ];
 
@@ -144,54 +144,62 @@ export function Atmosphere() {
     {
       className: "absolute left-[12%] top-[18%] h-[26rem] w-[26rem]",
       background:
-        "radial-gradient(circle, rgba(120,200,255,0.18), rgba(120,200,255,0) 60%)",
-      duration: 8,
-      delay: 0.6,
-      amp: 0.12,
+        "radial-gradient(circle, rgba(120,200,255,0.32), rgba(120,200,255,0) 60%)",
+      duration: 6,
+      delay: 0.5,
+      amp: 0.3,
     },
     {
       className: "absolute right-[18%] top-[58%] h-[30rem] w-[30rem]",
       background:
-        "radial-gradient(circle, rgba(255,180,140,0.16), rgba(255,180,140,0) 60%)",
-      duration: 10,
+        "radial-gradient(circle, rgba(255,180,140,0.28), rgba(255,180,140,0) 60%)",
+      duration: 7.5,
       delay: 1.8,
-      amp: 0.11,
+      amp: 0.28,
     },
   ];
 
   const revealSpheres: Sphere[] = [
     {
-      className: "absolute right-[6%] top-[8%] h-[28rem] w-[28rem]",
+      className: "absolute right-[6%] top-[8%] h-[30rem] w-[30rem]",
       background:
-        "radial-gradient(circle, rgba(255,210,140,0.14), rgba(255,210,140,0) 60%)",
-      duration: 9,
+        "radial-gradient(circle, rgba(255,210,140,0.34), rgba(255,210,140,0) 60%)",
+      duration: 7,
       delay: 0.3,
-      amp: 0.13,
+      amp: 0.3,
     },
     {
-      className: "absolute left-[8%] bottom-[6%] h-[34rem] w-[34rem]",
+      className: "absolute left-[8%] bottom-[6%] h-[36rem] w-[36rem]",
       background:
-        "radial-gradient(circle, rgba(140,255,210,0.14), rgba(140,255,210,0) 60%)",
-      duration: 12,
+        "radial-gradient(circle, rgba(140,255,210,0.34), rgba(140,255,210,0) 60%)",
+      duration: 9,
       delay: 1.2,
-      amp: 0.12,
+      amp: 0.28,
     },
     {
       className:
-        "absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2",
+        "absolute left-1/2 top-1/2 h-[24rem] w-[24rem] -translate-x-1/2 -translate-y-1/2",
       background:
-        "radial-gradient(circle, rgba(190,150,255,0.16), rgba(190,150,255,0) 60%)",
-      duration: 7,
+        "radial-gradient(circle, rgba(200,150,255,0.36), rgba(200,150,255,0) 60%)",
+      duration: 6,
       delay: 0,
-      amp: 0.15,
+      amp: 0.35,
     },
     {
-      className: "absolute right-[24%] bottom-[14%] h-[20rem] w-[20rem]",
+      className: "absolute right-[26%] bottom-[14%] h-[22rem] w-[22rem]",
       background:
-        "radial-gradient(circle, rgba(120,160,255,0.16), rgba(120,160,255,0) 60%)",
-      duration: 11,
+        "radial-gradient(circle, rgba(120,160,255,0.34), rgba(120,160,255,0) 60%)",
+      duration: 8.5,
       delay: 2.6,
-      amp: 0.14,
+      amp: 0.32,
+    },
+    {
+      className: "absolute left-[28%] top-[10%] h-[18rem] w-[18rem]",
+      background:
+        "radial-gradient(circle, rgba(255,140,180,0.32), rgba(255,140,180,0) 60%)",
+      duration: 7,
+      delay: 1.5,
+      amp: 0.3,
     },
   ];
 
