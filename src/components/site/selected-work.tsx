@@ -348,8 +348,8 @@ function PulseVisual() {
           <div className="absolute inset-12 rounded-full border border-white/10" />
           {[...Array(6)].map((_, i) => {
             const a = (i / 6) * Math.PI * 2;
-            const x = 50 + Math.cos(a) * 32;
-            const y = 50 + Math.sin(a) * 32;
+            const x = Math.round((50 + Math.cos(a) * 32) * 100) / 100;
+            const y = Math.round((50 + Math.sin(a) * 32) * 100) / 100;
             return (
               <motion.div
                 key={i}

@@ -211,7 +211,7 @@ function ScrollHashRouter({ panels }: { panels: ShowcasePanel[] }) {
     }
 
     function onClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const path = e.composedPath();
       let anchor: HTMLAnchorElement | null = null;
       for (const el of path) {
@@ -225,10 +225,14 @@ function ScrollHashRouter({ panels }: { panels: ShowcasePanel[] }) {
       if (!href || !href.startsWith("#")) return;
       const id = href.slice(1);
       if (!id) return;
-      if (scrollToPanel(id)) {
-        e.preventDefault();
-        history.replaceState(null, "", `#${id}`);
-      }
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+      if (!isDesktop) return; // mobile: let native scroll work
+      if (panels.findIndex((p) => p.id === id) < 0) return;
+      // Capture phase: pre-empt Next.js Link / native anchor handling
+      e.preventDefault();
+      e.stopPropagation();
+      scrollToPanel(id);
+      history.replaceState(null, "", `#${id}`);
     }
 
     function onHashChange() {
@@ -236,7 +240,8 @@ function ScrollHashRouter({ panels }: { panels: ShowcasePanel[] }) {
       if (id) scrollToPanel(id);
     }
 
-    document.addEventListener("click", onClick);
+    // Capture phase so we intercept BEFORE Next.js Link's own click handler.
+    document.addEventListener("click", onClick, true);
     window.addEventListener("hashchange", onHashChange);
 
     // Honor initial hash on load (defer until after layout)
@@ -256,7 +261,7 @@ function ScrollHashRouter({ panels }: { panels: ShowcasePanel[] }) {
     }
 
     return () => {
-      document.removeEventListener("click", onClick);
+      document.removeEventListener("click", onClick, true);
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [panels]);
