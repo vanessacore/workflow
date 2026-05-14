@@ -22,10 +22,10 @@ const projects: Project[] = [
     index: "01",
     year: "2025",
     title: "Aura",
-    subtitle: "Ambient AI assistant for everyday rituals",
+    subtitle: "Ambient AI assistant",
     description:
-      "A glanceable conversational layer that lives across your devices. Designed the gesture vocabulary, latency-aware motion system, and the quiet feedback loops that make AI feel calm — not chatty.",
-    tags: ["AI", "Multimodal", "Motion System"],
+      "A glanceable conversational layer across devices — quiet feedback loops that keep AI calm, not chatty.",
+    tags: ["AI", "Multimodal", "Motion"],
     accent: "from-violet-400/40 via-fuchsia-300/20 to-transparent",
     visual: <AuraVisual />,
   },
@@ -35,7 +35,7 @@ const projects: Project[] = [
     title: "Halo R1",
     subtitle: "AR smartglasses companion",
     description:
-      "Designed the on-glass UI grammar for a translucent companion: peripheral typography, off-axis interactions, and a layered information model that respects the world behind the lens.",
+      "On-glass UI grammar for a translucent companion — peripheral typography, off-axis interactions, layered information.",
     tags: ["Wearables", "AR", "Industrial"],
     accent: "from-cyan-300/30 via-blue-300/20 to-transparent",
     visual: <HaloVisual />,
@@ -44,10 +44,10 @@ const projects: Project[] = [
     index: "03",
     year: "2024",
     title: "Pulse",
-    subtitle: "Wrist-worn neural input study",
+    subtitle: "Wrist-worn neural input",
     description:
-      "Explored micro-gesture detection translated into a soft, tactile interaction language. Defined the latency budget, training rituals, and feedback choreography for a wearable that learns you.",
-    tags: ["Neural Input", "Wearables", "Research"],
+      "Micro-gestures translated into a tactile interaction language — a wearable that learns the rhythm of you.",
+    tags: ["Neural", "Wearables", "Research"],
     accent: "from-rose-300/35 via-orange-300/15 to-transparent",
     visual: <PulseVisual />,
   },
@@ -57,7 +57,7 @@ const projects: Project[] = [
     title: "Field Notes",
     subtitle: "On-device personal AI",
     description:
-      "A privacy-first companion that captures the small things — voice scribbles, photos, fleeting thoughts — and quietly weaves them into useful context, on-device. No cloud, no anxiety.",
+      "A privacy-first companion that captures the small things and weaves them into useful context, on-device only.",
     tags: ["AI", "Privacy", "Mobile"],
     accent: "from-emerald-300/25 via-teal-300/15 to-transparent",
     visual: <FieldNotesVisual />,
@@ -82,12 +82,86 @@ export function SelectedWork() {
         />
       </Reveal>
 
-      <div className="mt-16 flex flex-col gap-6 md:mt-24 md:gap-10">
+      {/* Mobile: stacked rich cards. Desktop: compact 2x2 grid that fits one panel. */}
+      <div className="mt-10 flex flex-col gap-6 md:hidden">
         {projects.map((p, i) => (
           <ProjectCard key={p.title} project={p} reverse={i % 2 === 1} />
         ))}
       </div>
+
+      <div className="mt-8 hidden grid-cols-1 gap-4 md:grid md:grid-cols-2 md:gap-5 lg:mt-10">
+        {projects.map((p, i) => (
+          <ProjectTile key={p.title} project={p} index={i} />
+        ))}
+      </div>
     </Section>
+  );
+}
+
+function ProjectTile({ project, index }: { project: Project; index: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.article
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
+      whileInView={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.8, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
+      className="group relative flex h-[clamp(11rem,26vh,15rem)] overflow-hidden rounded-2xl border border-white/5 bg-white/[0.015] backdrop-blur-sm transition-colors duration-700 hover:border-white/15"
+    >
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-0 bg-gradient-to-br opacity-60 transition-opacity duration-700 group-hover:opacity-100",
+          project.accent
+        )}
+      />
+      <div className="pointer-events-none absolute inset-px rounded-[calc(1rem-1px)] bg-black/45" />
+
+      <div className="relative z-10 grid w-full grid-cols-5">
+        <div className="relative col-span-2 overflow-hidden">
+          <div className="absolute inset-0 scale-[0.95] transition-transform duration-700 group-hover:scale-[1]">
+            {project.visual}
+          </div>
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black to-transparent" />
+        </div>
+
+        <div className="relative col-span-3 flex flex-col gap-2 p-4 md:p-5">
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-foreground/40">
+            <span>{project.index}</span>
+            <span>{project.year}</span>
+          </div>
+          <h3 className="text-base font-medium tracking-tight leading-tight md:text-[17px]">
+            <span className="text-foreground">{project.title}</span>
+            <span className="ml-1.5 text-foreground/35">—</span>
+            <span className="ml-1.5 font-serif italic text-foreground/70">
+              {project.subtitle}
+            </span>
+          </h3>
+          <p className="text-pretty text-[12.5px] leading-relaxed text-foreground/60 line-clamp-3">
+            {project.description}
+          </p>
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-2">
+            <div className="flex flex-wrap gap-1.5">
+              {project.tags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-foreground/65"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="group/btn inline-flex items-center gap-1.5 text-[11.5px] font-medium text-foreground/75 transition-colors hover:text-foreground"
+            >
+              Case study
+              <span className="relative h-px w-5 bg-white/30 transition-all group-hover/btn:w-8 group-hover/btn:bg-white/70" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.article>
   );
 }
 
@@ -119,22 +193,22 @@ function ProjectCard({
 
       <div
         className={cn(
-          "relative grid grid-cols-1 gap-0 lg:grid-cols-12",
-          reverse && "lg:[&>*:first-child]:order-2"
+          "relative grid grid-cols-1 gap-0",
+          reverse && "[&>*:first-child]:order-2"
         )}
       >
-        <div className="relative aspect-[16/10] overflow-hidden lg:col-span-7 lg:aspect-auto lg:min-h-[28rem]">
+        <div className="relative aspect-[16/10] overflow-hidden">
           {project.visual}
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
         </div>
 
-        <div className="relative flex flex-col gap-5 p-8 md:p-10 lg:col-span-5 lg:p-12">
+        <div className="relative flex flex-col gap-5 p-8">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.22em] text-foreground/40">
             <span>{project.index}</span>
             <span>{project.year}</span>
           </div>
           <div>
-            <h3 className="text-2xl font-medium tracking-tight md:text-3xl">
+            <h3 className="text-2xl font-medium tracking-tight">
               <span className="text-foreground">{project.title}</span>
               <span className="ml-2 text-foreground/40">—</span>
               <span className="ml-2 font-serif italic text-foreground/70">
@@ -155,7 +229,7 @@ function ProjectCard({
               </span>
             ))}
           </div>
-          <div className="mt-auto pt-6">
+          <div className="mt-auto pt-4">
             <button
               type="button"
               className="group/btn inline-flex items-center gap-2 text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground"
@@ -174,11 +248,11 @@ function AuraVisual() {
   return (
     <div className="relative h-full w-full bg-[linear-gradient(135deg,#0a0a0f,#0f0a18_50%,#0a0810)]">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-72 w-72 md:h-96 md:w-96">
+        <div className="relative h-40 w-40 md:h-48 md:w-48">
           <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,#a78bfa66,#60a5fa55,#f0abfc44,#a78bfa66)] blur-2xl animate-pulse-soft" />
-          <div className="absolute inset-6 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm" />
-          <div className="absolute inset-12 rounded-full border border-white/10 bg-black/60" />
-          <div className="absolute inset-[5.5rem] rounded-full bg-gradient-to-br from-white/95 to-white/30 shadow-[0_0_60px_rgba(180,160,255,0.55)]" />
+          <div className="absolute inset-3 rounded-full border border-white/10 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-7 rounded-full border border-white/10 bg-black/60" />
+          <div className="absolute inset-[2.75rem] rounded-full bg-gradient-to-br from-white/95 to-white/30 shadow-[0_0_60px_rgba(180,160,255,0.55)]" />
           {[...Array(3)].map((_, i) => (
             <motion.div
               key={i}
@@ -206,7 +280,7 @@ function HaloVisual() {
       <div className="absolute inset-0 flex items-center justify-center">
         <svg
           viewBox="0 0 600 360"
-          className="h-auto w-[78%] max-w-xl"
+          className="h-auto w-[85%] max-w-xs"
           fill="none"
         >
           <defs>
@@ -256,24 +330,7 @@ function HaloVisual() {
             <circle cx="180" cy="190" r="2" fill="#67e8f9" />
             <circle cx="420" cy="190" r="2" fill="#67e8f9" />
           </g>
-          <g
-            stroke="rgba(255,255,255,0.18)"
-            strokeWidth="1"
-            strokeDasharray="2 4"
-          >
-            <line x1="180" y1="140" x2="180" y2="40" />
-            <line x1="180" y1="40" x2="300" y2="40" />
-          </g>
-          <g fill="rgba(255,255,255,0.85)" fontFamily="ui-monospace, monospace" fontSize="9">
-            <text x="306" y="44">FOV · 52°</text>
-            <text x="306" y="58" fill="rgba(255,255,255,0.45)">peripheral type</text>
-          </g>
         </svg>
-      </div>
-      <div className="absolute inset-x-0 bottom-10 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] text-foreground/40">
-        <span>Halo R1</span>
-        <span className="h-px w-12 bg-white/10" />
-        <span>On-glass UI</span>
       </div>
       <CornerCrosshairs />
     </div>
@@ -284,11 +341,11 @@ function PulseVisual() {
   return (
     <div className="relative h-full w-full bg-[linear-gradient(135deg,#0d0808,#150a0a_55%,#080605)]">
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-64 w-64 md:h-80 md:w-80">
+        <div className="relative h-36 w-36 md:h-44 md:w-44">
           <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(244,114,182,0.25),_transparent_60%)] blur-2xl" />
-          <div className="absolute inset-6 rounded-full border border-white/10" />
-          <div className="absolute inset-14 rounded-full border border-white/10" />
-          <div className="absolute inset-24 rounded-full border border-white/10" />
+          <div className="absolute inset-3 rounded-full border border-white/10" />
+          <div className="absolute inset-7 rounded-full border border-white/10" />
+          <div className="absolute inset-12 rounded-full border border-white/10" />
           {[...Array(6)].map((_, i) => {
             const a = (i / 6) * Math.PI * 2;
             const x = 50 + Math.cos(a) * 32;
@@ -296,7 +353,7 @@ function PulseVisual() {
             return (
               <motion.div
                 key={i}
-                className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_18px_rgba(255,255,255,0.7)]"
+                className="absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,0.7)]"
                 style={{ left: `${x}%`, top: `${y}%` }}
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{
@@ -309,7 +366,7 @@ function PulseVisual() {
             );
           })}
           <svg
-            className="absolute left-1/2 top-1/2 h-32 w-48 -translate-x-1/2 -translate-y-1/2"
+            className="absolute left-1/2 top-1/2 h-20 w-32 -translate-x-1/2 -translate-y-1/2"
             viewBox="0 0 200 80"
             fill="none"
           >
@@ -331,40 +388,36 @@ function PulseVisual() {
 function FieldNotesVisual() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-[linear-gradient(135deg,#06100c,#08120e_55%,#040806)]">
-      <div className="absolute inset-0 flex items-center justify-center px-8">
-        <div className="relative w-full max-w-md">
+      <div className="absolute inset-0 flex items-center justify-center px-5">
+        <div className="relative w-full max-w-[12rem]">
           {[
-            { t: "00:42", text: "the corner of 5th & Bond, light off the awning" },
-            { t: "11:18", text: "remember to ask M about the framing — quiet, not loud" },
-            { t: "16:04", text: "color study · oat, ash, the faintest blush" },
+            { t: "00:42", text: "5th & Bond, light off the awning" },
+            { t: "11:18", text: "quiet, not loud — the framing" },
+            { t: "16:04", text: "oat, ash, the faintest blush" },
           ].map((card, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20, rotate: 0 }}
+              initial={{ opacity: 0, y: 12, rotate: 0 }}
               whileInView={{
                 opacity: 1,
-                y: i * 14,
+                y: i * 8,
                 rotate: (i - 1) * 2,
               }}
-              viewport={{ once: true, margin: "-80px" }}
+              viewport={{ once: true, margin: "-40px" }}
               transition={{
                 duration: 1,
-                delay: i * 0.15,
+                delay: i * 0.12,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm shadow-[0_20px_40px_-20px_rgba(0,0,0,0.8)]"
-              style={{ marginLeft: `${i * 8}px` }}
+              className="mb-2 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-sm shadow-[0_16px_32px_-16px_rgba(0,0,0,0.8)]"
+              style={{ marginLeft: `${i * 6}px` }}
             >
-              <div className="flex items-center justify-between text-[10.5px] uppercase tracking-[0.22em] text-foreground/40">
+              <div className="flex items-center justify-between text-[8.5px] uppercase tracking-[0.22em] text-foreground/40">
                 <span>note · {String(i + 1).padStart(2, "0")}</span>
                 <span>{card.t}</span>
               </div>
-              <div className="mt-2 font-serif text-[15px] italic leading-snug text-foreground/85">
+              <div className="mt-1 font-serif text-[11px] italic leading-snug text-foreground/85">
                 {card.text}
-              </div>
-              <div className="mt-3 flex gap-1">
-                <span className="h-px flex-1 bg-white/10" />
-                <span className="h-1 w-1 rounded-full bg-emerald-300/70" />
               </div>
             </motion.div>
           ))}
@@ -377,7 +430,7 @@ function FieldNotesVisual() {
 
 function CornerCrosshairs() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-3 text-white/15">
+    <div aria-hidden className="pointer-events-none absolute inset-2 text-white/15">
       {[
         "left-0 top-0",
         "right-0 top-0 rotate-90",

@@ -17,7 +17,7 @@ const tags = [
 export function About() {
   return (
     <Section id="about">
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
         <div className="lg:col-span-5">
           <Reveal>
             <Eyebrow>About</Eyebrow>
@@ -33,9 +33,9 @@ export function About() {
           </Reveal>
         </div>
 
-        <div className="space-y-8 lg:col-span-7">
+        <div className="space-y-6 lg:col-span-7">
           <Reveal delay={0.1}>
-            <p className="text-pretty text-lg leading-relaxed text-foreground/75">
+            <p className="text-pretty text-base leading-relaxed text-foreground/75 md:text-[17px]">
               I&apos;m a product designer at Meta working across AI and the
               next generation of wearables. My practice sits between the cinematic
               and the intimate — building interfaces that feel inevitable, like
@@ -69,7 +69,7 @@ export function About() {
           </Reveal>
 
           <Reveal delay={0.4}>
-            <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
+            <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
               {[
                 { k: "Now", v: "Senior Product Designer · Meta" },
                 { k: "Before", v: "Apple · IDEO · Frog" },
@@ -78,12 +78,12 @@ export function About() {
               ].map((it) => (
                 <div
                   key={it.k}
-                  className="bg-black/40 p-5"
+                  className="bg-black/40 p-4"
                 >
                   <div className="text-[10.5px] uppercase tracking-[0.22em] text-foreground/40">
                     {it.k}
                   </div>
-                  <div className="mt-1.5 text-sm font-medium text-foreground/90">
+                  <div className="mt-1 text-[13.5px] font-medium text-foreground/90">
                     {it.v}
                   </div>
                 </div>

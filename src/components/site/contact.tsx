@@ -14,8 +14,8 @@ const channels = [
 
 export function Contact() {
   return (
-    <Section id="contact" className="pb-32 md:pb-40">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.02] p-8 backdrop-blur-sm md:p-16 lg:p-24">
+    <Section id="contact" className="pb-32 md:pb-20">
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.02] p-8 backdrop-blur-sm md:p-10 lg:p-14">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -37,7 +37,7 @@ export function Contact() {
             <Eyebrow>Contact</Eyebrow>
           </Reveal>
           <Reveal delay={0.05}>
-            <h2 className="mt-6 max-w-4xl text-balance text-[clamp(2.25rem,6vw,5rem)] font-medium leading-[1.02] tracking-[-0.03em]">
+            <h2 className="mt-5 max-w-4xl text-balance text-[clamp(2rem,5vw,4.25rem)] font-medium leading-[1.02] tracking-[-0.03em]">
               <span className="text-gradient">Have a hard problem </span>
               <span className="font-serif italic text-foreground/85">
                 worth designing
@@ -46,7 +46,7 @@ export function Contact() {
             </h2>
           </Reveal>
           <Reveal delay={0.15}>
-            <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-foreground/60 md:text-lg">
+            <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-foreground/60">
               I take on a small number of collaborations each year — usually
               0→1 product work at the intersection of AI, hardware, and the
               body. If that sounds like you, write me a paragraph.
@@ -57,7 +57,7 @@ export function Contact() {
             <motion.div
               whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.3 }}
-              className="mt-10 inline-block"
+              className="mt-8 inline-block"
             >
               <Link
                 href="mailto:hello@vanessacore.design"
@@ -88,7 +88,7 @@ export function Contact() {
             </motion.div>
           </Reveal>
 
-          <div className="mt-16 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-white/8 bg-white/[0.02] sm:grid-cols-2 lg:grid-cols-4">
             {channels.map((c, i) => (
               <motion.a
                 key={c.label}
