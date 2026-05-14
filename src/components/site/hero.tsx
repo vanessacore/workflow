@@ -1,28 +1,15 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
-
   return (
     <section
       id="top"
-      ref={ref}
-      className="relative isolate flex min-h-[100svh] w-full items-center overflow-hidden px-6 pt-32 pb-24 md:pt-40 md:pb-32"
+      className="relative isolate flex h-full min-h-[100svh] w-full items-center overflow-hidden px-6 pt-32 pb-24 md:min-h-0 md:px-12 md:pt-28 md:pb-24 lg:px-20"
     >
       <div
         aria-hidden
@@ -40,10 +27,7 @@ export function Hero() {
         />
       </div>
 
-      <motion.div
-        style={reduce ? undefined : { y, opacity, scale }}
-        className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center"
-      >
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,7 +45,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.25 }}
-          className="mt-8 max-w-5xl text-balance text-[clamp(2.75rem,8vw,7rem)] font-medium leading-[0.95] tracking-[-0.035em]"
+          className="mt-7 max-w-5xl text-balance text-[clamp(2.5rem,7vw,6.25rem)] font-medium leading-[0.95] tracking-[-0.035em]"
         >
           <span className="text-gradient">Designing the </span>
           <span className="font-serif italic text-gradient-accent animate-shimmer">
@@ -74,7 +58,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease, delay: 0.5 }}
-          className="mt-7 max-w-2xl text-pretty text-base leading-relaxed text-foreground/65 md:text-lg"
+          className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-foreground/65 md:text-lg"
         >
           I&apos;m <span className="text-foreground">Vanessa Core</span> — a
           product designer at Meta shaping AI experiences and the next generation
@@ -86,14 +70,14 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease, delay: 0.75 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-3"
+          className="mt-8 flex flex-wrap items-center justify-center gap-3"
         >
           <Link
             href="#work"
             className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-white px-5 py-3 text-[13.5px] font-medium tracking-tight text-black transition-all hover:bg-white/95"
           >
             <span className="absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.6),_transparent_70%)] opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-            View selected work
+            Drift through the work
             <Arrow />
           </Link>
           <Link
@@ -108,7 +92,7 @@ export function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 1 }}
-          className="mt-20 grid w-full max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm sm:grid-cols-4"
+          className="mt-12 grid w-full max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm sm:grid-cols-4"
         >
           {[
             { k: "8+", v: "Years designing 0→1" },
@@ -118,7 +102,7 @@ export function Hero() {
           ].map((it) => (
             <div
               key={it.v}
-              className="flex flex-col items-center gap-1 bg-black/40 px-4 py-5 text-center"
+              className="flex flex-col items-center gap-1 bg-black/40 px-4 py-4 text-center"
             >
               <div className="text-xl font-medium tracking-tight text-foreground md:text-2xl">
                 {it.k}
@@ -129,13 +113,14 @@ export function Hero() {
             </div>
           ))}
         </motion.div>
-      </motion.div>
+      </div>
 
+      {/* Mobile-only scroll hint — desktop uses the showcase's own indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.6, delay: 1.4 }}
-        className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center"
+        className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center md:hidden"
       >
         <div className="flex flex-col items-center gap-2 text-[10.5px] uppercase tracking-[0.3em] text-foreground/40">
           <span>Scroll</span>

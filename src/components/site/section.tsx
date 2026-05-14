@@ -17,12 +17,17 @@ export function Section({
       id={id}
       className={cn(
         "relative w-full",
-        !bare && "px-6 py-28 md:py-36 lg:py-44",
+        // On mobile we want the traditional vertical rhythm;
+        // on md+ the section sits inside a 100vh horizontal panel
+        // and uses flex-centered layout with tighter padding.
+        !bare &&
+          "px-6 py-28 md:flex md:h-full md:min-h-screen md:items-center md:px-12 md:py-20 lg:px-20",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px hairline" />
-      <div className="mx-auto w-full max-w-6xl">{children}</div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px hairline md:hidden" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-px hairline-vertical md:block" />
+      <div className="relative z-10 mx-auto w-full max-w-6xl">{children}</div>
     </section>
   );
 }
@@ -61,14 +66,14 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        "flex flex-col gap-5",
+        "flex flex-col gap-4",
         align === "center" && "items-center text-center"
       )}
     >
       <Eyebrow>{eyebrow}</Eyebrow>
       <h2
         className={cn(
-          "text-balance text-4xl font-medium tracking-[-0.02em] text-foreground sm:text-5xl md:text-6xl",
+          "text-balance text-3xl font-medium tracking-[-0.02em] text-foreground sm:text-4xl md:text-5xl lg:text-[3.25rem]",
           "text-gradient"
         )}
       >
@@ -77,7 +82,7 @@ export function SectionHeading({
       {description && (
         <p
           className={cn(
-            "max-w-2xl text-pretty text-base leading-relaxed text-foreground/60 md:text-lg",
+            "max-w-2xl text-pretty text-base leading-relaxed text-foreground/60 md:text-[15.5px]",
             align === "center" && "mx-auto"
           )}
         >
