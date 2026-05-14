@@ -4,7 +4,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Atmosphere } from "@/components/site/atmosphere";
 import { Nav } from "@/components/site/nav";
-import { Footer } from "@/components/site/footer";
 import { ScrollProgress } from "@/components/site/scroll-progress";
 
 const geistSans = Geist({
@@ -69,7 +68,6 @@ export default function RootLayout({
         <ScrollProgress />
         <Nav />
         <main className="relative z-10 flex flex-col">{children}</main>
-        <Footer />
       </body>
     </html>
   );
