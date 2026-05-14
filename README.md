@@ -31,6 +31,32 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This repo ships with a GitHub Actions workflow (`.github/workflows/deploy-vercel.yml`) that deploys to Vercel automatically:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Push to `main`** → production deploy
+- **Pull request to `main`** → preview deploy (URL posted as a PR comment)
+- **Manual** → run the workflow via the Actions tab (`workflow_dispatch`)
+
+### One-time setup
+
+1. Install the Vercel CLI locally and link the repo (only needed once, from a machine that has Vercel access):
+
+   ```bash
+   npm install --global vercel
+   vercel login
+   vercel link
+   ```
+
+   This creates a `.vercel/project.json` containing the org and project IDs.
+
+2. Create a Vercel access token at [vercel.com/account/tokens](https://vercel.com/account/tokens).
+
+3. Add the following GitHub Actions secrets to this repository (Settings → Secrets and variables → Actions):
+
+   | Secret              | Value                                                            |
+   | ------------------- | ---------------------------------------------------------------- |
+   | `VERCEL_TOKEN`      | The Vercel access token from step 2                              |
+   | `VERCEL_ORG_ID`     | `orgId` from `.vercel/project.json` (or Vercel Team Settings)    |
+   | `VERCEL_PROJECT_ID` | `projectId` from `.vercel/project.json` (or Vercel Project Settings) |
+
+After secrets are added, the next push to `main` will deploy to production. See the [Next.js deployment docs](https://nextjs.org/docs/app/getting-started/deploying) for more details.
