@@ -291,8 +291,11 @@ function PulseVisual() {
           <div className="absolute inset-24 rounded-full border border-white/10" />
           {[...Array(6)].map((_, i) => {
             const a = (i / 6) * Math.PI * 2;
-            const x = 50 + Math.cos(a) * 32;
-            const y = 50 + Math.sin(a) * 32;
+            // Round to a fixed precision so SSR and client emit identical
+            // strings (raw FP math produces values like 33.999999999999986%
+            // on the client vs "34%" on the server, which hydration-mismatches).
+            const x = (50 + Math.cos(a) * 32).toFixed(4);
+            const y = (50 + Math.sin(a) * 32).toFixed(4);
             return (
               <motion.div
                 key={i}
