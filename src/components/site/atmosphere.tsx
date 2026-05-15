@@ -429,9 +429,12 @@ function DottedSphere({
 
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      {/* Container is larger than the gradient sphere (42rem) so the dot
+          silhouette orbits well outside the gradient's bright core,
+          leaving a clear gap between the two layers. */}
       <motion.div
         style={reduce ? undefined : { x, y, scale }}
-        className="relative h-[42rem] w-[42rem] will-change-transform"
+        className="relative h-[58rem] w-[58rem] will-change-transform"
       >
         <canvas
           ref={canvasRef}
