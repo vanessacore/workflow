@@ -283,8 +283,13 @@ function SplineSphere() {
         mesh only fills ~69% of its canvas container, so to render a sphere
         that's 15% larger than the gradient (42 * 1.15 = 48.3rem visible),
         the canvas container must be ~48.3 / 0.69 ≈ 70rem.
+
+        The 3D mesh inside the Spline scene is not centered in its own
+        canvas — it renders ~17% below the canvas center. To put the
+        visible sphere at the actual viewport center, shift the canvas
+        container up by that same fraction of its own height.
       */}
-      <div className="relative h-[70rem] w-[70rem]">
+      <div className="relative h-[70rem] w-[70rem] -translate-y-[16%]">
         <Spline scene="https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode" />
       </div>
     </div>
