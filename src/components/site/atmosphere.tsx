@@ -20,24 +20,42 @@ type Star = {
   twinkleOpacity: number;
 };
 
-function seededStars(count: number, seed: number): Star[] {
+function makeRand(seed: number) {
   let state = seed >>> 0;
-  const rand = () => {
+  return () => {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
     return state / 0x100000000;
   };
+}
+
+// `sizeBias` controls how tiny the stars are. Lower = smaller. Far layers use
+// the smallest stars; the closer foreground layer is allowed a few slightly
+// brighter pixels but everything stays sub-pixel-feeling on a normal screen.
+function seededStars(
+  count: number,
+  seed: number,
+  opts: { sizeBias?: "tiny" | "small" | "near" } = {}
+): Star[] {
+  const rand = makeRand(seed);
+  const bias = opts.sizeBias ?? "tiny";
   return Array.from({ length: count }, () => {
     const sizePick = rand();
-    const size =
-      sizePick < 0.72 ? 1 : sizePick < 0.94 ? 1.5 : sizePick < 0.99 ? 2 : 2.5;
+    let size: number;
+    if (bias === "tiny") {
+      size = sizePick < 0.9 ? 1 : 1.25;
+    } else if (bias === "small") {
+      size = sizePick < 0.78 ? 1 : sizePick < 0.97 ? 1.25 : 1.5;
+    } else {
+      size = sizePick < 0.6 ? 1 : sizePick < 0.92 ? 1.25 : sizePick < 0.99 ? 1.5 : 1.75;
+    }
     return {
       left: `${rand() * 100}%`,
       top: `${rand() * 100}%`,
       size,
-      duration: 2.4 + rand() * 5.2,
-      delay: rand() * 7,
-      baseOpacity: 0.18 + rand() * 0.35,
-      twinkleOpacity: 0.7 + rand() * 0.3,
+      duration: 3.6 + rand() * 6.4,
+      delay: rand() * 9,
+      baseOpacity: 0.12 + rand() * 0.28,
+      twinkleOpacity: 0.55 + rand() * 0.35,
     };
   });
 }
@@ -55,27 +73,33 @@ const SPHERE_GRADIENT =
 export function Atmosphere() {
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll();
+  // Heavier spring smoothing so the scroll-driven parallax responds slowly.
   const smooth = useSpring(scrollYProgress, {
-    stiffness: 80,
-    damping: 24,
-    mass: 0.4,
+    stiffness: 55,
+    damping: 28,
+    mass: 0.6,
   });
 
-  const stars = useMemo(() => seededStars(160, 1337), []);
+  // Three independent star fields so layered parallax reads as depth rather
+  // than a single field sliding behind the sphere.
+  const farStars = useMemo(() => seededStars(110, 1337, { sizeBias: "tiny" }), []);
+  const midStars = useMemo(() => seededStars(70, 4242, { sizeBias: "small" }), []);
+  const nearStars = useMemo(() => seededStars(34, 9001, { sizeBias: "near" }), []);
 
-  // Stars get a gentle parallax so the sphere reads as the foreground subject.
-  const farY = useTransform(smooth, [0, 1], ["0%", "-6%"]);
-  const farX = useTransform(smooth, [0, 1], ["0%", "3%"]);
+  // Per-layer parallax: far moves the least, near the most. Vertical drift is
+  // larger than horizontal so scrolling reads as descent through the field.
+  const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
+  const farX = useTransform(smooth, [0, 1], ["0%", "1.5%"]);
+  const midY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
+  const midX = useTransform(smooth, [0, 1], ["0%", "3%"]);
+  const nearY = useTransform(smooth, [0, 1], ["0%", "-16%"]);
+  const nearX = useTransform(smooth, [0, 1], ["0%", "5%"]);
 
-  // Sphere zooms in and out across the scroll: a few alternating stops so the
-  // viewer feels the orb pulse closer and further as they scroll.
-  const sphereScale = useTransform(
-    smooth,
-    [0, 0.25, 0.5, 0.75, 1],
-    [0.85, 1.55, 0.9, 1.75, 1.1]
-  );
-  const sphereY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
-  const sphereX = useTransform(smooth, [0, 1], ["0%", "4%"]);
+  // Sphere parallax: monotonic, smooth scale + slow drift. No bouncy
+  // multi-stop curve — scroll pushes the sphere forward steadily.
+  const sphereScale = useTransform(smooth, [0, 1], [0.92, 1.35]);
+  const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
+  const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
   return (
     <div
@@ -86,7 +110,13 @@ export function Atmosphere() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(40,30,100,0.14),_transparent_55%)]" />
 
       <ParallaxLayer x={farX} y={farY} reduce={!!reduce}>
-        <StarField stars={stars} reduce={!!reduce} />
+        <StarField stars={farStars} reduce={!!reduce} glow={false} />
+      </ParallaxLayer>
+      <ParallaxLayer x={midX} y={midY} reduce={!!reduce}>
+        <StarField stars={midStars} reduce={!!reduce} glow={false} />
+      </ParallaxLayer>
+      <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
+        <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
       <GradientSphere
@@ -116,88 +146,99 @@ function GradientSphere({
 }) {
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      {/* Outer wrapper: scroll-driven parallax (translate + scale). */}
       <motion.div
         style={reduce ? undefined : { x, y, scale }}
         className="relative h-[42rem] w-[42rem] will-change-transform"
       >
-        {/* Soft halo layer — large, blurred, hue-cycling */}
+        {/* Inner wrapper: subtle continuous breathing while idle. Composes
+            multiplicatively with the scroll-driven scale on the parent. */}
         <motion.div
-          className="absolute inset-[-18%] rounded-full"
-          style={{
-            background: SPHERE_GRADIENT,
-            backgroundSize: "180% 180%",
-          }}
-          animate={
-            reduce
-              ? undefined
-              : {
-                  backgroundPosition: [
-                    "0% 0%",
-                    "100% 0%",
-                    "100% 100%",
-                    "0% 100%",
-                    "0% 0%",
-                  ],
-                  filter: [
-                    "hue-rotate(0deg) blur(72px)",
-                    "hue-rotate(90deg) blur(72px)",
-                    "hue-rotate(180deg) blur(72px)",
-                    "hue-rotate(270deg) blur(72px)",
-                    "hue-rotate(360deg) blur(72px)",
-                  ],
-                }
-          }
-          transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-        />
+          className="absolute inset-0"
+          animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {/* Soft halo layer — large, blurred, hue-cycling very slowly. */}
+          <motion.div
+            className="absolute inset-[-18%] rounded-full"
+            style={{
+              background: SPHERE_GRADIENT,
+              backgroundSize: "180% 180%",
+            }}
+            animate={
+              reduce
+                ? undefined
+                : {
+                    backgroundPosition: [
+                      "0% 0%",
+                      "100% 0%",
+                      "100% 100%",
+                      "0% 100%",
+                      "0% 0%",
+                    ],
+                    filter: [
+                      "hue-rotate(0deg) blur(72px)",
+                      "hue-rotate(90deg) blur(72px)",
+                      "hue-rotate(180deg) blur(72px)",
+                      "hue-rotate(270deg) blur(72px)",
+                      "hue-rotate(360deg) blur(72px)",
+                    ],
+                  }
+            }
+            transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+          />
 
-        {/* Sharper inner highlight — same gradient, opposite drift, screen blend */}
-        <motion.div
-          className="absolute inset-[10%] rounded-full"
-          style={{
-            background: SPHERE_GRADIENT,
-            backgroundSize: "220% 220%",
-            mixBlendMode: "screen",
-          }}
-          animate={
-            reduce
-              ? undefined
-              : {
-                  backgroundPosition: [
-                    "100% 100%",
-                    "0% 100%",
-                    "0% 0%",
-                    "100% 0%",
-                    "100% 100%",
-                  ],
-                  filter: [
-                    "hue-rotate(0deg) blur(32px)",
-                    "hue-rotate(-90deg) blur(32px)",
-                    "hue-rotate(-180deg) blur(32px)",
-                    "hue-rotate(-270deg) blur(32px)",
-                    "hue-rotate(-360deg) blur(32px)",
-                  ],
-                }
-          }
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-        />
+          {/* Sharper inner highlight — same gradient, opposite drift, even
+              slower hue cycle so the two layers cross-fade gradually. */}
+          <motion.div
+            className="absolute inset-[10%] rounded-full"
+            style={{
+              background: SPHERE_GRADIENT,
+              backgroundSize: "220% 220%",
+              mixBlendMode: "screen",
+            }}
+            animate={
+              reduce
+                ? undefined
+                : {
+                    backgroundPosition: [
+                      "100% 100%",
+                      "0% 100%",
+                      "0% 0%",
+                      "100% 0%",
+                      "100% 100%",
+                    ],
+                    filter: [
+                      "hue-rotate(0deg) blur(32px)",
+                      "hue-rotate(-90deg) blur(32px)",
+                      "hue-rotate(-180deg) blur(32px)",
+                      "hue-rotate(-270deg) blur(32px)",
+                      "hue-rotate(-360deg) blur(32px)",
+                    ],
+                  }
+            }
+            transition={{ duration: 110, repeat: Infinity, ease: "linear" }}
+          />
 
-        {/* Bright white outlined glow that fades in and out */}
-        <motion.div
-          className="absolute inset-[6%] rounded-full"
-          animate={
-            reduce
-              ? { opacity: 0.55 }
-              : {
-                  opacity: [0.35, 1, 0.35],
-                  boxShadow: [
-                    "0 0 40px 0px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.15) inset",
-                    "0 0 140px 18px rgba(255,255,255,0.85), 0 0 0 2px rgba(255,255,255,0.95) inset",
-                    "0 0 40px 0px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.15) inset",
-                  ],
-                }
-          }
-          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-        />
+          {/* Soft outlined glow that breathes very slowly. The amplitude is
+              intentionally narrow so it never punches; just a long swell. */}
+          <motion.div
+            className="absolute inset-[6%] rounded-full"
+            animate={
+              reduce
+                ? { opacity: 0.55 }
+                : {
+                    opacity: [0.5, 0.78, 0.5],
+                    boxShadow: [
+                      "0 0 60px 4px rgba(255,255,255,0.22), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                      "0 0 110px 14px rgba(255,255,255,0.5), 0 0 0 1.5px rgba(255,255,255,0.55) inset",
+                      "0 0 60px 4px rgba(255,255,255,0.22), 0 0 0 1px rgba(255,255,255,0.18) inset",
+                    ],
+                  }
+            }
+            transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -228,7 +269,15 @@ function ParallaxLayer({
   );
 }
 
-function StarField({ stars, reduce }: { stars: Star[]; reduce: boolean }) {
+function StarField({
+  stars,
+  reduce,
+  glow,
+}: {
+  stars: Star[];
+  reduce: boolean;
+  glow: boolean;
+}) {
   return (
     <div className="absolute inset-0">
       {stars.map((s, i) => (
@@ -242,8 +291,8 @@ function StarField({ stars, reduce }: { stars: Star[]; reduce: boolean }) {
             height: `${s.size}px`,
             opacity: s.baseOpacity,
             boxShadow:
-              s.size >= 1.5
-                ? `0 0 ${s.size * 2.5}px rgba(255,255,255,0.55)`
+              glow && s.size >= 1.25
+                ? `0 0 ${s.size * 2}px rgba(255,255,255,0.45)`
                 : undefined,
             animation: reduce
               ? undefined
