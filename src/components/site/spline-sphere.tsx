@@ -1,5 +1,25 @@
 "use client";
 
+/**
+ * Drop-in Spline replacement for the canvas-based DottedSphere in
+ * `atmosphere.tsx`.
+ *
+ * To enable:
+ *   1. `npm install` (the `@splinetool/react-spline` and
+ *      `@splinetool/runtime` deps are already declared in package.json)
+ *   2. In `atmosphere.tsx` swap the `<DottedSphere ... />` call for
+ *      `<SplineSphere x={dotsX} y={dotsY} scale={dotsScale} reduce={!!reduce} />`
+ *      (plus the matching import from "./spline-sphere"). The
+ *      `scrollProgress` prop is not needed — Spline drives its own
+ *      rotation inside the scene.
+ *
+ * The file is intentionally left unreferenced for now because the
+ * Cursor Cloud agent VM cannot reach `registry.npmjs.org` to install
+ * the Spline runtime, so wiring this in from the agent breaks the
+ * build. Once the dep is installed locally (or via an env-setup agent
+ * with the right network allowlist), the swap is a one-line change.
+ */
+
 import {
   motion,
   useReducedMotion,
