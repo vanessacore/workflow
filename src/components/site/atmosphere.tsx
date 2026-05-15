@@ -1,7 +1,5 @@
 "use client";
 
-import Spline from "@splinetool/react-spline";
-import type { Application } from "@splinetool/runtime";
 import {
   motion,
   useMotionValue,
@@ -10,7 +8,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 type Star = {
   left: string;
@@ -122,13 +120,10 @@ export function Atmosphere() {
   const midScale = useTransform(smoothZoom, [0, 1], [0.9, 1.22]);
   const nearScale = useTransform(smoothZoom, [0, 1], [0.85, 1.4]);
 
-  // Sphere depth parallax. The gradient sphere sits "behind" the Spline mesh,
-  // so its scale travels through a tighter range — when the camera pushes in,
-  // the Spline mesh balloons while the gradient halo grows only modestly.
-  // When the camera pulls back, the Spline mesh shrinks more aggressively, so
-  // the gradient ends up looking comparatively larger.
-  const sphereScale = useTransform(smoothZoom, [0, 1], [0.82, 1.18]);
-  const dotsScale = useTransform(smoothZoom, [0, 1], [0.55, 1.9]);
+  // Gradient sphere zoom range. With the Spline mesh removed, the gradient
+  // halo is now the sole hero element, so it gets a wider travel than when
+  // it was the "farther" layer in the differential parallax pair.
+  const sphereScale = useTransform(smoothZoom, [0, 1], [0.7, 1.55]);
 
   return (
     <div
@@ -149,8 +144,6 @@ export function Atmosphere() {
       </ParallaxLayer>
 
       <GradientSphere scale={sphereScale} reduce={!!reduce} />
-
-      <SplineSphere scale={dotsScale} reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -282,84 +275,6 @@ function ParallaxLayer({
     <motion.div style={style} className="absolute inset-0 will-change-transform">
       {children}
     </motion.div>
-  );
-}
-
-// Spline scene that replaces the previous canvas-based dotted sphere.
-// The scene drives its own internal rotation.
-//
-// NOTE: origin/main migrated to a different scene URL
-// ("x8loCVRSMhnir2Bk") that is authored transparent at the scene level
-// and renders centered. We deliberately keep the original URL here
-// because the very recent on-branch tuning (canvas size, transparency
-// hack below, and the -3.25rem vertical offset) is calibrated for it.
-// Switching scene URLs is a visual/UX decision that should be made
-// explicitly rather than through a silent merge resolution.
-const SPLINE_SCENE_URL =
-  "https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode";
-
-function SplineSphere({
-  scale,
-  reduce,
-}: {
-  scale: MotionValue<number>;
-  reduce: boolean;
-}) {
-  // Force the Spline canvas to render with a transparent clear color so the
-  // gradient sphere + starfield behind it remain visible. See the long-form
-  // explanation in the previous revision: setBackgroundColor only swaps one
-  // opaque color for another, so we reach through to the internal scene +
-  // renderer to null the background and clear with alpha=0.
-  const handleLoad = useCallback((app: Application) => {
-    type ColorLike = { r: number; g: number; b: number };
-    type RendererLike = {
-      setClearColor?: (color: number, alpha: number) => void;
-      setClearAlpha?: (alpha: number) => void;
-    };
-    type SceneLike = {
-      background?: unknown;
-      fog?: unknown;
-    };
-    const internal = app as unknown as {
-      _scene?: SceneLike;
-      _renderer?: RendererLike;
-      scene?: SceneLike;
-      renderer?: RendererLike;
-    };
-    const scene = internal._scene ?? internal.scene;
-    const renderer = internal._renderer ?? internal.renderer;
-    if (scene) {
-      const sceneRecord = scene as SceneLike & Record<string, unknown>;
-      sceneRecord.background = null;
-      sceneRecord["spline.activeSceneBackground"] = null;
-      sceneRecord["spline.activeBackgroundColor"] = {
-        r: 0,
-        g: 0,
-        b: 0,
-      } satisfies ColorLike;
-    }
-    if (renderer) {
-      renderer.setClearColor?.(0x000000, 0);
-      renderer.setClearAlpha?.(0);
-    }
-  }, []);
-
-  return (
-    // The Spline scene composes the visible sphere with a particle disk
-    // hanging below it. Centering the canvas geometrically (top-1/2) drops
-    // the perceived center of mass below the viewport center, which reads as
-    // a vertical offset against the gradient halo. Shift the wrapper up so
-    // the rendered sphere visually lines up with the halo above it.
-    <div className="absolute left-1/2 top-[calc(50%-3.25rem)] -translate-x-1/2 -translate-y-1/2">
-      {/* Sized so the visible 3D mesh inside the Spline scene reads as
-          slightly larger than the 42rem gradient sphere it floats over. */}
-      <motion.div
-        style={reduce ? undefined : { scale }}
-        className="relative h-[68rem] w-[68rem] will-change-transform"
-      >
-        <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
-      </motion.div>
-    </div>
   );
 }
 
