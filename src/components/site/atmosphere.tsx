@@ -8,7 +8,25 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo } from "react";
+
+// Spline ships a client-only WebGL runtime, so load it on the client only.
+// Suspense fallback is null because the gradient sphere already fills the
+// hero while the 3D scene streams in.
+const Spline = dynamic(() => import("@splinetool/react-spline"), {
+  ssr: false,
+  loading: () => null,
+});
+
+const SPLINE_SCENE_URL =
+  "https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode";
+
+// Gradient sphere container size in rem. The Spline sphere is sized 20%
+// larger so the two halos read as two concentric shells rather than a
+// single object.
+const GRADIENT_SPHERE_REM = 42;
+const SPLINE_SPHERE_REM = GRADIENT_SPHERE_REM * 1.2;
 
 type Star = {
   left: string;
@@ -144,6 +162,7 @@ export function Atmosphere() {
       </ParallaxLayer>
 
       <GradientSphere scale={sphereScale} reduce={!!reduce} />
+      <SplineSphere scale={sphereScale} reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -163,8 +182,12 @@ function GradientSphere({
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       {/* Outer wrapper: user-driven zoom (scale). */}
       <motion.div
-        style={reduce ? undefined : { scale }}
-        className="relative h-[42rem] w-[42rem] will-change-transform"
+        style={{
+          width: `${GRADIENT_SPHERE_REM}rem`,
+          height: `${GRADIENT_SPHERE_REM}rem`,
+          ...(reduce ? undefined : { scale }),
+        }}
+        className="relative will-change-transform"
       >
         {/* Inner wrapper: subtle continuous breathing while idle. Composes
             multiplicatively with the user-driven scale on the parent. */}
@@ -254,6 +277,34 @@ function GradientSphere({
             transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.div>
+      </motion.div>
+    </div>
+  );
+}
+
+function SplineSphere({
+  scale,
+  reduce,
+}: {
+  scale: MotionValue<number>;
+  reduce: boolean;
+}) {
+  return (
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      {/* Same zoom/parallax response as GradientSphere, just sized 20% larger
+          so the 3D sphere reads as the outer shell of the composition. */}
+      <motion.div
+        style={{
+          width: `${SPLINE_SPHERE_REM}rem`,
+          height: `${SPLINE_SPHERE_REM}rem`,
+          ...(reduce ? undefined : { scale }),
+        }}
+        className="relative will-change-transform"
+      >
+        <Spline
+          scene={SPLINE_SCENE_URL}
+          style={{ width: "100%", height: "100%" }}
+        />
       </motion.div>
     </div>
   );
