@@ -277,7 +277,17 @@ function ParallaxLayer({
 
 function SplineSphere() {
   return (
-    <Spline scene="https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode" />
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      {/*
+        Gradient sphere visible diameter is 42rem. The Spline scene's visible
+        mesh only fills ~69% of its canvas container, so to render a sphere
+        that's 15% larger than the gradient (42 * 1.15 = 48.3rem visible),
+        the canvas container must be ~48.3 / 0.69 ≈ 70rem.
+      */}
+      <div className="relative h-[70rem] w-[70rem]">
+        <Spline scene="https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode" />
+      </div>
+    </div>
   );
 }
 
