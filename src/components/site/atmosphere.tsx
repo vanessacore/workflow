@@ -42,48 +42,15 @@ function seededStars(count: number, seed: number): Star[] {
   });
 }
 
-type Sphere = {
-  className: string;
-  background: string;
-  duration: number;
-  delay: number;
-  amp: number;
-};
-
-function Spheres({
-  spheres,
-  reduce,
-}: {
-  spheres: Sphere[];
-  reduce: boolean;
-}) {
-  return (
-    <>
-      {spheres.map((s, i) => (
-        <div key={i} className={s.className}>
-          <motion.div
-            animate={
-              reduce
-                ? undefined
-                : {
-                    scale: [1, 1 + s.amp, 1],
-                    opacity: [0.35, 1, 0.35],
-                  }
-            }
-            transition={{
-              duration: s.duration,
-              delay: s.delay,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="h-full w-full rounded-full blur-3xl"
-            style={{ background: s.background }}
-          />
-        </div>
-      ))}
-    </>
-  );
-}
+// Multi-radial-gradient body of the sphere. Defined once and shared between
+// the soft outer halo and the sharper inner highlight so the layers stay in
+// sync as their positions/hues animate.
+const SPHERE_GRADIENT =
+  "radial-gradient(circle at 28% 30%, rgba(200,140,255,0.95), rgba(200,140,255,0) 48%)," +
+  "radial-gradient(circle at 72% 32%, rgba(120,200,255,0.9), rgba(120,200,255,0) 50%)," +
+  "radial-gradient(circle at 68% 74%, rgba(255,140,200,0.95), rgba(255,140,200,0) 50%)," +
+  "radial-gradient(circle at 28% 70%, rgba(140,255,210,0.8), rgba(140,255,210,0) 52%)," +
+  "radial-gradient(circle at 50% 50%, rgba(255,210,140,0.75), rgba(255,210,140,0) 62%)";
 
 export function Atmosphere() {
   const reduce = useReducedMotion();
@@ -96,112 +63,19 @@ export function Atmosphere() {
 
   const stars = useMemo(() => seededStars(160, 1337), []);
 
-  const nearScale = useTransform(smooth, [0, 1], [1, 1.9]);
-  const nearY = useTransform(smooth, [0, 1], ["0%", "-22%"]);
-  const nearX = useTransform(smooth, [0, 1], ["0%", "12%"]);
-  const nearOpacity = useTransform(smooth, [0, 0.5, 1], [1, 0.75, 0.55]);
-
-  const midScale = useTransform(smooth, [0, 1], [1, 1.4]);
-  const midY = useTransform(smooth, [0, 1], ["0%", "-12%"]);
-  const midX = useTransform(smooth, [0, 1], ["0%", "-9%"]);
-
+  // Stars get a gentle parallax so the sphere reads as the foreground subject.
   const farY = useTransform(smooth, [0, 1], ["0%", "-6%"]);
   const farX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
-  const revealOpacity = useTransform(smooth, [0, 0.15, 0.5, 1], [0, 0.55, 1, 1]);
-  const revealScale = useTransform(smooth, [0, 1], [0.7, 1.25]);
-
-  const nearSpheres: Sphere[] = [
-    {
-      className:
-        "absolute left-1/2 top-[-12%] h-[64rem] w-[64rem] -translate-x-1/2",
-      background:
-        "radial-gradient(circle, rgba(160,140,255,0.32), rgba(160,140,255,0) 62%)",
-      duration: 7,
-      delay: 0,
-      amp: 0.22,
-    },
-    {
-      className: "absolute left-[-14%] top-[32%] h-[42rem] w-[42rem]",
-      background:
-        "radial-gradient(circle, rgba(80,180,255,0.28), rgba(80,180,255,0) 62%)",
-      duration: 8,
-      delay: 1.2,
-      amp: 0.25,
-    },
-    {
-      className:
-        "absolute right-[-14%] bottom-[-10%] h-[52rem] w-[52rem]",
-      background:
-        "radial-gradient(circle, rgba(255,120,200,0.26), rgba(255,120,200,0) 62%)",
-      duration: 9,
-      delay: 2.4,
-      amp: 0.24,
-    },
-  ];
-
-  const midSpheres: Sphere[] = [
-    {
-      className: "absolute left-[12%] top-[18%] h-[26rem] w-[26rem]",
-      background:
-        "radial-gradient(circle, rgba(120,200,255,0.32), rgba(120,200,255,0) 60%)",
-      duration: 6,
-      delay: 0.5,
-      amp: 0.3,
-    },
-    {
-      className: "absolute right-[18%] top-[58%] h-[30rem] w-[30rem]",
-      background:
-        "radial-gradient(circle, rgba(255,180,140,0.28), rgba(255,180,140,0) 60%)",
-      duration: 7.5,
-      delay: 1.8,
-      amp: 0.28,
-    },
-  ];
-
-  const revealSpheres: Sphere[] = [
-    {
-      className: "absolute right-[6%] top-[8%] h-[30rem] w-[30rem]",
-      background:
-        "radial-gradient(circle, rgba(255,210,140,0.34), rgba(255,210,140,0) 60%)",
-      duration: 7,
-      delay: 0.3,
-      amp: 0.3,
-    },
-    {
-      className: "absolute left-[8%] bottom-[6%] h-[36rem] w-[36rem]",
-      background:
-        "radial-gradient(circle, rgba(140,255,210,0.34), rgba(140,255,210,0) 60%)",
-      duration: 9,
-      delay: 1.2,
-      amp: 0.28,
-    },
-    {
-      className:
-        "absolute left-1/2 top-1/2 h-[24rem] w-[24rem] -translate-x-1/2 -translate-y-1/2",
-      background:
-        "radial-gradient(circle, rgba(200,150,255,0.36), rgba(200,150,255,0) 60%)",
-      duration: 6,
-      delay: 0,
-      amp: 0.35,
-    },
-    {
-      className: "absolute right-[26%] bottom-[14%] h-[22rem] w-[22rem]",
-      background:
-        "radial-gradient(circle, rgba(120,160,255,0.34), rgba(120,160,255,0) 60%)",
-      duration: 8.5,
-      delay: 2.6,
-      amp: 0.32,
-    },
-    {
-      className: "absolute left-[28%] top-[10%] h-[18rem] w-[18rem]",
-      background:
-        "radial-gradient(circle, rgba(255,140,180,0.32), rgba(255,140,180,0) 60%)",
-      duration: 7,
-      delay: 1.5,
-      amp: 0.3,
-    },
-  ];
+  // Sphere zooms in and out across the scroll: a few alternating stops so the
+  // viewer feels the orb pulse closer and further as they scroll.
+  const sphereScale = useTransform(
+    smooth,
+    [0, 0.25, 0.5, 0.75, 1],
+    [0.85, 1.55, 0.9, 1.75, 1.1]
+  );
+  const sphereY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
+  const sphereX = useTransform(smooth, [0, 1], ["0%", "4%"]);
 
   return (
     <div
@@ -215,36 +89,116 @@ export function Atmosphere() {
         <StarField stars={stars} reduce={!!reduce} />
       </ParallaxLayer>
 
-      <ParallaxLayer
-        x={midX}
-        y={midY}
-        scale={midScale}
+      <GradientSphere
+        x={sphereX}
+        y={sphereY}
+        scale={sphereScale}
         reduce={!!reduce}
-      >
-        <Spheres spheres={midSpheres} reduce={!!reduce} />
-      </ParallaxLayer>
-
-      <ParallaxLayer
-        x={nearX}
-        y={nearY}
-        scale={nearScale}
-        opacity={nearOpacity}
-        reduce={!!reduce}
-      >
-        <Spheres spheres={nearSpheres} reduce={!!reduce} />
-      </ParallaxLayer>
-
-      <ParallaxLayer
-        scale={revealScale}
-        opacity={revealOpacity}
-        reduce={!!reduce}
-      >
-        <Spheres spheres={revealSpheres} reduce={!!reduce} />
-      </ParallaxLayer>
+      />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
       <div className="absolute inset-x-0 top-0 h-px hairline" />
+    </div>
+  );
+}
+
+function GradientSphere({
+  x,
+  y,
+  scale,
+  reduce,
+}: {
+  x: MotionValue<string>;
+  y: MotionValue<string>;
+  scale: MotionValue<number>;
+  reduce: boolean;
+}) {
+  return (
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <motion.div
+        style={reduce ? undefined : { x, y, scale }}
+        className="relative h-[42rem] w-[42rem] will-change-transform"
+      >
+        {/* Soft halo layer — large, blurred, hue-cycling */}
+        <motion.div
+          className="absolute inset-[-18%] rounded-full"
+          style={{
+            background: SPHERE_GRADIENT,
+            backgroundSize: "180% 180%",
+          }}
+          animate={
+            reduce
+              ? undefined
+              : {
+                  backgroundPosition: [
+                    "0% 0%",
+                    "100% 0%",
+                    "100% 100%",
+                    "0% 100%",
+                    "0% 0%",
+                  ],
+                  filter: [
+                    "hue-rotate(0deg) blur(72px)",
+                    "hue-rotate(90deg) blur(72px)",
+                    "hue-rotate(180deg) blur(72px)",
+                    "hue-rotate(270deg) blur(72px)",
+                    "hue-rotate(360deg) blur(72px)",
+                  ],
+                }
+          }
+          transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Sharper inner highlight — same gradient, opposite drift, screen blend */}
+        <motion.div
+          className="absolute inset-[10%] rounded-full"
+          style={{
+            background: SPHERE_GRADIENT,
+            backgroundSize: "220% 220%",
+            mixBlendMode: "screen",
+          }}
+          animate={
+            reduce
+              ? undefined
+              : {
+                  backgroundPosition: [
+                    "100% 100%",
+                    "0% 100%",
+                    "0% 0%",
+                    "100% 0%",
+                    "100% 100%",
+                  ],
+                  filter: [
+                    "hue-rotate(0deg) blur(32px)",
+                    "hue-rotate(-90deg) blur(32px)",
+                    "hue-rotate(-180deg) blur(32px)",
+                    "hue-rotate(-270deg) blur(32px)",
+                    "hue-rotate(-360deg) blur(32px)",
+                  ],
+                }
+          }
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Bright white outlined glow that fades in and out */}
+        <motion.div
+          className="absolute inset-[6%] rounded-full"
+          animate={
+            reduce
+              ? { opacity: 0.55 }
+              : {
+                  opacity: [0.35, 1, 0.35],
+                  boxShadow: [
+                    "0 0 40px 0px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.15) inset",
+                    "0 0 140px 18px rgba(255,255,255,0.85), 0 0 0 2px rgba(255,255,255,0.95) inset",
+                    "0 0 40px 0px rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.15) inset",
+                  ],
+                }
+          }
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
     </div>
   );
 }
