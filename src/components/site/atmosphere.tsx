@@ -287,17 +287,15 @@ type SphereDot = {
   x: number;
   y: number;
   z: number;
-  // Per-dot multipliers so each dot reads at a different size and
-  // brightness — this is what makes the cloud feel irregular instead
-  // of a perfect lattice.
+  // Per-dot size multiplier so each dot reads at its own size — this
+  // is what makes the cloud feel irregular instead of a perfect
+  // lattice. Alpha is uniform across all dots, so size carries depth.
   sizeMul: number;
-  alphaMul: number;
 };
 
 // Uniformly random points on the unit sphere using the inverse-CDF
 // method (`cos(theta) ~ U[-1,1]`, `phi ~ U[0,2pi]`). Combined with a
-// seeded RNG so the layout is stable across renders. Per-dot size and
-// alpha multipliers add the "some big, some tiny" irregularity.
+// seeded RNG so the layout is stable across renders.
 function randomSphereDots(n: number, seed: number): SphereDot[] {
   const rand = makeRand(seed);
   const dots: SphereDot[] = new Array(n);
@@ -315,9 +313,8 @@ function randomSphereDots(n: number, seed: number): SphereDot[] {
     // squashes most values toward 0 and lets a few stretch out).
     const sizeRoll = Math.pow(rand(), 1.7);
     const sizeMul = 0.45 + sizeRoll * 1.85;
-    const alphaMul = 0.65 + rand() * 0.55;
 
-    dots[i] = { x, y, z, sizeMul, alphaMul };
+    dots[i] = { x, y, z, sizeMul };
   }
   return dots;
 }
@@ -387,6 +384,11 @@ function DottedSphere({
 
       ctx.clearRect(0, 0, w, h);
 
+      // All dots render at a uniform 95% white. Depth perception is
+      // carried by per-dot size variation alone, so back-facing dots
+      // stay equally bright but smaller.
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+
       for (let i = 0; i < points.length; i++) {
         const p = points[i];
         // Rotate around Y, then X.
@@ -395,24 +397,16 @@ function DottedSphere({
         const y1 = p.y * cosX - z1 * sinX;
         const z2 = p.y * sinX + z1 * cosX;
 
-        // Map z (-1 back, +1 front) to depth in [0, 1], then mix with
-        // the per-dot multipliers so size and brightness vary
-        // independently of pure depth — that's what makes the cloud
-        // feel irregular instead of a precise lattice.
         const depth = (z2 + 1) / 2;
         const dotSize = (0.3 + depth * 1.45) * p.sizeMul;
-        const alpha = (0.05 + depth * 0.78) * p.alphaMul;
 
         const px = cx + x1 * r;
         const py = cy + y1 * r;
 
-        ctx.globalAlpha = Math.min(1, alpha);
         ctx.beginPath();
         ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-        ctx.fillStyle = "white";
         ctx.fill();
       }
-      ctx.globalAlpha = 1;
 
       if (!reduce) {
         raf = requestAnimationFrame(renderFrame);
