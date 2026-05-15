@@ -1,15 +1,14 @@
 "use client";
 
-import Spline from "@splinetool/react-spline";
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 type Star = {
   left: string;
@@ -29,9 +28,6 @@ function makeRand(seed: number) {
   };
 }
 
-// `sizeBias` controls how tiny the stars are. Lower = smaller. Far layers use
-// the smallest stars; the closer foreground layer is allowed a few slightly
-// brighter pixels but everything stays sub-pixel-feeling on a normal screen.
 function seededStars(
   count: number,
   seed: number,
@@ -55,18 +51,12 @@ function seededStars(
       size,
       duration: 3.6 + rand() * 6.4,
       delay: rand() * 9,
-      // Stars sit alongside the bright 95% dotted sphere, so they need
-      // to read clearly against the dark background rather than being
-      // a barely-visible texture.
       baseOpacity: 0.4 + rand() * 0.35,
       twinkleOpacity: 0.85 + rand() * 0.15,
     };
   });
 }
 
-// Multi-radial-gradient body of the sphere. Defined once and shared between
-// the soft outer halo and the sharper inner highlight so the layers stay in
-// sync as their positions/hues animate.
 const SPHERE_GRADIENT =
   "radial-gradient(circle at 28% 30%, rgba(200,140,255,0.95), rgba(200,140,255,0) 48%)," +
   "radial-gradient(circle at 72% 32%, rgba(120,200,255,0.9), rgba(120,200,255,0) 50%)," +
@@ -74,15 +64,49 @@ const SPHERE_GRADIENT =
   "radial-gradient(circle at 28% 70%, rgba(140,255,210,0.8), rgba(140,255,210,0) 52%)," +
   "radial-gradient(circle at 50% 50%, rgba(255,210,140,0.75), rgba(255,210,140,0) 62%)";
 
+// Default zoom sits in the middle of the range so users can zoom both in and out.
+const ZOOM_DEFAULT = 0.35;
+
 export function Atmosphere() {
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll();
-  // Heavier spring smoothing so the scroll-driven parallax responds slowly.
-  const smooth = useSpring(scrollYProgress, {
-    stiffness: 55,
-    damping: 28,
-    mass: 0.6,
+
+  // User-driven interaction state. zoom is normalised 0..1 across the full
+  // travel from "way out" to "right up against the camera".
+  const zoom = useMotionValue(ZOOM_DEFAULT);
+
+  // Spring smoothing so wheel "kicks" feel weighty rather than instant.
+  // Slightly under-damped for a tactile feel.
+  const smoothZoom = useSpring(zoom, {
+    stiffness: 70,
+    damping: 22,
+    mass: 0.55,
   });
+
+  useEffect(() => {
+    if (reduce) return;
+
+    const clamp = (v: number) => Math.min(1, Math.max(0, v));
+
+    function onWheel(e: WheelEvent) {
+      // Soak up wheel events so the page never tries to scroll — there's
+      // nothing to scroll to and we want every tick to drive zoom instead.
+      e.preventDefault();
+      // Normalise across mouse wheels (large discrete deltas) and trackpads
+      // (small continuous deltas, also pinch-zoom which arrives with ctrlKey).
+      const raw = e.deltaY;
+      const magnitude = Math.min(Math.abs(raw) * 0.0018 + 0.004, 0.07);
+      // Up-scroll (deltaY < 0) means zoom in.
+      const step = -Math.sign(raw) * magnitude;
+      zoom.set(clamp(zoom.get() + step));
+    }
+
+    // We always want the wheel handler to be non-passive so we can preventDefault.
+    window.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+    };
+  }, [reduce, zoom]);
 
   // Three independent star fields so layered parallax reads as depth rather
   // than a single field sliding behind the sphere.
@@ -90,20 +114,16 @@ export function Atmosphere() {
   const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
   const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
 
-  // Per-layer parallax: far moves the least, near the most. Vertical drift is
-  // larger than horizontal so scrolling reads as descent through the field.
-  const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
-  const farX = useTransform(smooth, [0, 1], ["0%", "1.5%"]);
-  const midY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
-  const midX = useTransform(smooth, [0, 1], ["0%", "3%"]);
-  const nearY = useTransform(smooth, [0, 1], ["0%", "-16%"]);
-  const nearX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+  // Per-layer zoom response: the farther a layer is, the less it scales.
+  // Far stars barely budge; near stars track the camera more closely.
+  const farScale = useTransform(smoothZoom, [0, 1], [0.94, 1.12]);
+  const midScale = useTransform(smoothZoom, [0, 1], [0.9, 1.22]);
+  const nearScale = useTransform(smoothZoom, [0, 1], [0.85, 1.4]);
 
-  // Sphere parallax: monotonic, smooth scale + slow drift. No bouncy
-  // multi-stop curve — scroll pushes the sphere forward steadily.
-  const sphereScale = useTransform(smooth, [0, 1], [0.92, 1.35]);
-  const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
-  const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
+  // Gradient sphere zoom range. With the Spline mesh removed, the gradient
+  // halo is now the sole hero element, so it gets a wider travel than when
+  // it was the "farther" layer in the differential parallax pair.
+  const sphereScale = useTransform(smoothZoom, [0, 1], [0.7, 1.55]);
 
   return (
     <div
@@ -113,24 +133,17 @@ export function Atmosphere() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(40,30,100,0.14),_transparent_55%)]" />
 
-      <ParallaxLayer x={farX} y={farY} reduce={!!reduce}>
+      <ParallaxLayer scale={farScale} reduce={!!reduce}>
         <StarField stars={farStars} reduce={!!reduce} glow={false} />
       </ParallaxLayer>
-      <ParallaxLayer x={midX} y={midY} reduce={!!reduce}>
+      <ParallaxLayer scale={midScale} reduce={!!reduce}>
         <StarField stars={midStars} reduce={!!reduce} glow={false} />
       </ParallaxLayer>
-      <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
+      <ParallaxLayer scale={nearScale} reduce={!!reduce}>
         <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
-      <GradientSphere
-        x={sphereX}
-        y={sphereY}
-        scale={sphereScale}
-        reduce={!!reduce}
-      />
-
-      <SplineSphere />
+      <GradientSphere scale={sphereScale} reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -140,25 +153,21 @@ export function Atmosphere() {
 }
 
 function GradientSphere({
-  x,
-  y,
   scale,
   reduce,
 }: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
   scale: MotionValue<number>;
   reduce: boolean;
 }) {
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Outer wrapper: scroll-driven parallax (translate + scale). */}
+      {/* Outer wrapper: user-driven zoom (scale). */}
       <motion.div
-        style={reduce ? undefined : { x, y, scale }}
+        style={reduce ? undefined : { scale }}
         className="relative h-[42rem] w-[42rem] will-change-transform"
       >
         {/* Inner wrapper: subtle continuous breathing while idle. Composes
-            multiplicatively with the scroll-driven scale on the parent. */}
+            multiplicatively with the user-driven scale on the parent. */}
         <motion.div
           className="absolute inset-0"
           animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
@@ -252,43 +261,20 @@ function GradientSphere({
 
 function ParallaxLayer({
   children,
-  x,
-  y,
   scale,
-  opacity,
   reduce,
 }: {
   children: React.ReactNode;
-  x?: MotionValue<string>;
-  y?: MotionValue<string>;
   scale?: MotionValue<number>;
-  opacity?: MotionValue<number>;
   reduce: boolean;
 }) {
   const style = reduce
     ? undefined
-    : ({ x, y, scale, opacity } as Record<string, MotionValue<string | number> | undefined>);
+    : ({ scale } as Record<string, MotionValue<number> | undefined>);
   return (
     <motion.div style={style} className="absolute inset-0 will-change-transform">
       {children}
     </motion.div>
-  );
-}
-
-function SplineSphere() {
-  return (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/*
-        80rem canvas sizes the visible 3D mesh to ~15% larger than the
-        gradient sphere's visible body. At this canvas size, this
-        Spline scene renders its mesh near the canvas center, so the
-        canvas wrapper alone (centered via -translate-x/y-1/2) lands
-        the visible content on the gradient sphere's center.
-      */}
-      <div className="relative h-[80rem] w-[80rem]">
-        <Spline scene="https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode" />
-      </div>
-    </div>
   );
 }
 
