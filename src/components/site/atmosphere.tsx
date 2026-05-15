@@ -1,7 +1,6 @@
 "use client";
 
 import Spline from "@splinetool/react-spline";
-import type { Application } from "@splinetool/runtime";
 import {
   motion,
   useReducedMotion,
@@ -10,7 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 type Star = {
   left: string;
@@ -106,12 +105,6 @@ export function Atmosphere() {
   const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
   const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
-  // The dotted sphere is its own layer that parallaxes a touch more
-  // aggressively than the gradient — it sits in front of it.
-  const dotsScale = useTransform(smooth, [0, 1], [0.95, 1.5]);
-  const dotsY = useTransform(smooth, [0, 1], ["0%", "-11%"]);
-  const dotsX = useTransform(smooth, [0, 1], ["0%", "5%"]);
-
   return (
     <div
       aria-hidden
@@ -137,12 +130,7 @@ export function Atmosphere() {
         reduce={!!reduce}
       />
 
-      <SplineSphere
-        x={dotsX}
-        y={dotsY}
-        scale={dotsScale}
-        reduce={!!reduce}
-      />
+      <SplineSphere />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -287,84 +275,9 @@ function ParallaxLayer({
   );
 }
 
-// Spline scene that replaces the previous canvas-based dotted sphere.
-// The scene drives its own rotation, so we only need to layer the
-// scroll-driven parallax transform from the parent on top.
-const SPLINE_SCENE_URL =
-  "https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode";
-
-function SplineSphere({
-  x,
-  y,
-  scale,
-  reduce,
-}: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
-  scale: MotionValue<number>;
-  reduce: boolean;
-}) {
-  // Make the Spline canvas transparent so the gradient sphere +
-  // starfield behind it remain visible. The Spline runtime keeps a
-  // colored background on the THREE.Scene and clears the WebGL canvas
-  // with that color, so the canvas paints opaque pixels even when the
-  // page wants to show layers behind it. The public `setBackgroundColor`
-  // API runs the value through THREE.Color, which strips alpha — so it
-  // can only swap one opaque color for another. Instead, reach through
-  // the internal renderer + scene to:
-  //   1. null out the scene background object (removes the colored
-  //      background plane the renderer draws each frame),
-  //   2. force the renderer's clear color to fully transparent.
-  const handleLoad = useCallback((app: Application) => {
-    type ColorLike = { r: number; g: number; b: number };
-    type RendererLike = {
-      setClearColor?: (color: number, alpha: number) => void;
-      setClearAlpha?: (alpha: number) => void;
-    };
-    type SceneLike = {
-      background?: unknown;
-      fog?: unknown;
-    };
-    const internal = app as unknown as {
-      _scene?: SceneLike;
-      _renderer?: RendererLike;
-      scene?: SceneLike;
-      renderer?: RendererLike;
-    };
-    const scene = internal._scene ?? internal.scene;
-    const renderer = internal._renderer ?? internal.renderer;
-    if (scene) {
-      const sceneRecord = scene as SceneLike & Record<string, unknown>;
-      // THREE.Scene.background — can be a Color, Texture, or null.
-      sceneRecord.background = null;
-      // The Spline-tagged background reference some runtime builds use.
-      sceneRecord["spline.activeSceneBackground"] = null;
-      sceneRecord["spline.activeBackgroundColor"] = {
-        r: 0,
-        g: 0,
-        b: 0,
-      } satisfies ColorLike;
-    }
-    if (renderer) {
-      renderer.setClearColor?.(0x000000, 0);
-      renderer.setClearAlpha?.(0);
-    }
-  }, []);
-
+function SplineSphere() {
   return (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Sized so the visible 3D mesh inside the Spline scene reads as
-          slightly larger than the 42rem gradient sphere it floats over.
-          The scene only fills ~60% of its canvas, so the container is
-          considerably larger than the gradient to make the rendered
-          sphere itself end up bigger. */}
-      <motion.div
-        style={reduce ? undefined : { x, y, scale }}
-        className="relative h-[68rem] w-[68rem] will-change-transform"
-      >
-        <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
-      </motion.div>
-    </div>
+    <Spline scene="https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode" />
   );
 }
 
