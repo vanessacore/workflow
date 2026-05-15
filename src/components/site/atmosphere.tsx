@@ -4,13 +4,13 @@ import Spline from "@splinetool/react-spline";
 import type { Application } from "@splinetool/runtime";
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 type Star = {
   left: string;
@@ -30,9 +30,6 @@ function makeRand(seed: number) {
   };
 }
 
-// `sizeBias` controls how tiny the stars are. Lower = smaller. Far layers use
-// the smallest stars; the closer foreground layer is allowed a few slightly
-// brighter pixels but everything stays sub-pixel-feeling on a normal screen.
 function seededStars(
   count: number,
   seed: number,
@@ -56,18 +53,12 @@ function seededStars(
       size,
       duration: 3.6 + rand() * 6.4,
       delay: rand() * 9,
-      // Stars sit alongside the bright 95% dotted sphere, so they need
-      // to read clearly against the dark background rather than being
-      // a barely-visible texture.
       baseOpacity: 0.4 + rand() * 0.35,
       twinkleOpacity: 0.85 + rand() * 0.15,
     };
   });
 }
 
-// Multi-radial-gradient body of the sphere. Defined once and shared between
-// the soft outer halo and the sharper inner highlight so the layers stay in
-// sync as their positions/hues animate.
 const SPHERE_GRADIENT =
   "radial-gradient(circle at 28% 30%, rgba(200,140,255,0.95), rgba(200,140,255,0) 48%)," +
   "radial-gradient(circle at 72% 32%, rgba(120,200,255,0.9), rgba(120,200,255,0) 50%)," +
@@ -75,15 +66,93 @@ const SPHERE_GRADIENT =
   "radial-gradient(circle at 28% 70%, rgba(140,255,210,0.8), rgba(140,255,210,0) 52%)," +
   "radial-gradient(circle at 50% 50%, rgba(255,210,140,0.75), rgba(255,210,140,0) 62%)";
 
+// Default zoom sits in the middle of the range so users can zoom both in and out.
+const ZOOM_DEFAULT = 0.35;
+
 export function Atmosphere() {
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll();
-  // Heavier spring smoothing so the scroll-driven parallax responds slowly.
-  const smooth = useSpring(scrollYProgress, {
-    stiffness: 55,
-    damping: 28,
-    mass: 0.6,
+
+  // User-driven interaction state. zoom is normalised 0..1 across the full
+  // travel from "way out" to "right up against the camera"; rotation is the
+  // accumulated horizontal drag delta in degrees.
+  const zoom = useMotionValue(ZOOM_DEFAULT);
+  const rotation = useMotionValue(0);
+
+  // Spring smoothing so wheel "kicks" and drag flicks feel weighty rather
+  // than instant. Slightly under-damped for a tactile feel.
+  const smoothZoom = useSpring(zoom, {
+    stiffness: 70,
+    damping: 22,
+    mass: 0.55,
   });
+  const smoothRotation = useSpring(rotation, {
+    stiffness: 85,
+    damping: 26,
+    mass: 0.5,
+  });
+
+  useEffect(() => {
+    if (reduce) return;
+
+    const clamp = (v: number) => Math.min(1, Math.max(0, v));
+
+    function onWheel(e: WheelEvent) {
+      // Soak up wheel events so the page never tries to scroll — there's
+      // nothing to scroll to and we want every tick to drive zoom instead.
+      e.preventDefault();
+      // Normalise across mouse wheels (large discrete deltas) and trackpads
+      // (small continuous deltas, also pinch-zoom which arrives with ctrlKey).
+      const raw = e.deltaY;
+      const magnitude = Math.min(Math.abs(raw) * 0.0018 + 0.004, 0.07);
+      // Up-scroll (deltaY < 0) means zoom in.
+      const step = -Math.sign(raw) * magnitude;
+      zoom.set(clamp(zoom.get() + step));
+    }
+
+    let activePointer: number | null = null;
+    let lastX = 0;
+
+    function onPointerDown(e: PointerEvent) {
+      // Ignore non-primary mouse buttons. Touch + pen always pass.
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      // Don't hijack drags that start on interactive controls (links, buttons,
+      // form fields). Keeps the hero CTAs and other UI clickable.
+      const target = e.target as Element | null;
+      if (target && target.closest("a, button, input, textarea, select, [role='button']")) {
+        return;
+      }
+      activePointer = e.pointerId;
+      lastX = e.clientX;
+    }
+    function onPointerMove(e: PointerEvent) {
+      if (activePointer !== e.pointerId) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      // 0.45 deg per CSS pixel — a full screen-width drag spins ~half a turn,
+      // which feels responsive without being twitchy.
+      rotation.set(rotation.get() + dx * 0.45);
+    }
+    function onPointerUp(e: PointerEvent) {
+      if (activePointer === e.pointerId) {
+        activePointer = null;
+      }
+    }
+
+    // We always want the wheel handler to be non-passive so we can preventDefault.
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [reduce, zoom, rotation]);
 
   // Three independent star fields so layered parallax reads as depth rather
   // than a single field sliding behind the sphere.
@@ -91,26 +160,24 @@ export function Atmosphere() {
   const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
   const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
 
-  // Per-layer parallax: far moves the least, near the most. Vertical drift is
-  // larger than horizontal so scrolling reads as descent through the field.
-  const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
-  const farX = useTransform(smooth, [0, 1], ["0%", "1.5%"]);
-  const midY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
-  const midX = useTransform(smooth, [0, 1], ["0%", "3%"]);
-  const nearY = useTransform(smooth, [0, 1], ["0%", "-16%"]);
-  const nearX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+  // Per-layer zoom response: the farther a layer is, the less it scales.
+  // Far stars barely budge; near stars track the camera more closely.
+  const farScale = useTransform(smoothZoom, [0, 1], [0.94, 1.12]);
+  const midScale = useTransform(smoothZoom, [0, 1], [0.9, 1.22]);
+  const nearScale = useTransform(smoothZoom, [0, 1], [0.85, 1.4]);
 
-  // Sphere parallax: monotonic, smooth scale + slow drift. No bouncy
-  // multi-stop curve — scroll pushes the sphere forward steadily.
-  const sphereScale = useTransform(smooth, [0, 1], [0.92, 1.35]);
-  const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
-  const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
+  // Sphere depth parallax. The gradient sphere sits "behind" the Spline mesh,
+  // so its scale travels through a tighter range — when the camera pushes in,
+  // the Spline mesh balloons while the gradient halo grows only modestly.
+  // When the camera pulls back, the Spline mesh shrinks more aggressively, so
+  // the gradient ends up looking comparatively larger.
+  const sphereScale = useTransform(smoothZoom, [0, 1], [0.82, 1.18]);
+  const dotsScale = useTransform(smoothZoom, [0, 1], [0.55, 1.9]);
 
-  // The dotted sphere is its own layer that parallaxes a touch more
-  // aggressively than the gradient — it sits in front of it.
-  const dotsScale = useTransform(smooth, [0, 1], [0.95, 1.5]);
-  const dotsY = useTransform(smooth, [0, 1], ["0%", "-11%"]);
-  const dotsX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+  // Both spheres share the same rotation source so they spin together, but the
+  // farther gradient turns a touch slower — another small depth cue.
+  const sphereRotate = useTransform(smoothRotation, (v) => v * 0.75);
+  const dotsRotate = smoothRotation;
 
   return (
     <div
@@ -120,27 +187,25 @@ export function Atmosphere() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(40,30,100,0.14),_transparent_55%)]" />
 
-      <ParallaxLayer x={farX} y={farY} reduce={!!reduce}>
+      <ParallaxLayer scale={farScale} reduce={!!reduce}>
         <StarField stars={farStars} reduce={!!reduce} glow={false} />
       </ParallaxLayer>
-      <ParallaxLayer x={midX} y={midY} reduce={!!reduce}>
+      <ParallaxLayer scale={midScale} reduce={!!reduce}>
         <StarField stars={midStars} reduce={!!reduce} glow={false} />
       </ParallaxLayer>
-      <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
+      <ParallaxLayer scale={nearScale} reduce={!!reduce}>
         <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
       <GradientSphere
-        x={sphereX}
-        y={sphereY}
         scale={sphereScale}
+        rotate={sphereRotate}
         reduce={!!reduce}
       />
 
       <SplineSphere
-        x={dotsX}
-        y={dotsY}
         scale={dotsScale}
+        rotate={dotsRotate}
         reduce={!!reduce}
       />
 
@@ -152,25 +217,23 @@ export function Atmosphere() {
 }
 
 function GradientSphere({
-  x,
-  y,
   scale,
+  rotate,
   reduce,
 }: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
   scale: MotionValue<number>;
+  rotate: MotionValue<number>;
   reduce: boolean;
 }) {
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Outer wrapper: scroll-driven parallax (translate + scale). */}
+      {/* Outer wrapper: user-driven zoom (scale) + rotation. */}
       <motion.div
-        style={reduce ? undefined : { x, y, scale }}
+        style={reduce ? undefined : { scale, rotate }}
         className="relative h-[42rem] w-[42rem] will-change-transform"
       >
         {/* Inner wrapper: subtle continuous breathing while idle. Composes
-            multiplicatively with the scroll-driven scale on the parent. */}
+            multiplicatively with the user-driven scale on the parent. */}
         <motion.div
           className="absolute inset-0"
           animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
@@ -264,22 +327,16 @@ function GradientSphere({
 
 function ParallaxLayer({
   children,
-  x,
-  y,
   scale,
-  opacity,
   reduce,
 }: {
   children: React.ReactNode;
-  x?: MotionValue<string>;
-  y?: MotionValue<string>;
   scale?: MotionValue<number>;
-  opacity?: MotionValue<number>;
   reduce: boolean;
 }) {
   const style = reduce
     ? undefined
-    : ({ x, y, scale, opacity } as Record<string, MotionValue<string | number> | undefined>);
+    : ({ scale } as Record<string, MotionValue<number> | undefined>);
   return (
     <motion.div style={style} className="absolute inset-0 will-change-transform">
       {children}
@@ -288,33 +345,25 @@ function ParallaxLayer({
 }
 
 // Spline scene that replaces the previous canvas-based dotted sphere.
-// The scene drives its own rotation, so we only need to layer the
-// scroll-driven parallax transform from the parent on top.
+// The scene drives its own internal rotation; the user-driven rotation we
+// apply here is a Z-axis spin on the wrapper, layered on top of that.
 const SPLINE_SCENE_URL =
   "https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode";
 
 function SplineSphere({
-  x,
-  y,
   scale,
+  rotate,
   reduce,
 }: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
   scale: MotionValue<number>;
+  rotate: MotionValue<number>;
   reduce: boolean;
 }) {
-  // Make the Spline canvas transparent so the gradient sphere +
-  // starfield behind it remain visible. The Spline runtime keeps a
-  // colored background on the THREE.Scene and clears the WebGL canvas
-  // with that color, so the canvas paints opaque pixels even when the
-  // page wants to show layers behind it. The public `setBackgroundColor`
-  // API runs the value through THREE.Color, which strips alpha — so it
-  // can only swap one opaque color for another. Instead, reach through
-  // the internal renderer + scene to:
-  //   1. null out the scene background object (removes the colored
-  //      background plane the renderer draws each frame),
-  //   2. force the renderer's clear color to fully transparent.
+  // Force the Spline canvas to render with a transparent clear color so the
+  // gradient sphere + starfield behind it remain visible. See the long-form
+  // explanation in the previous revision: setBackgroundColor only swaps one
+  // opaque color for another, so we reach through to the internal scene +
+  // renderer to null the background and clear with alpha=0.
   const handleLoad = useCallback((app: Application) => {
     type ColorLike = { r: number; g: number; b: number };
     type RendererLike = {
@@ -335,9 +384,7 @@ function SplineSphere({
     const renderer = internal._renderer ?? internal.renderer;
     if (scene) {
       const sceneRecord = scene as SceneLike & Record<string, unknown>;
-      // THREE.Scene.background — can be a Color, Texture, or null.
       sceneRecord.background = null;
-      // The Spline-tagged background reference some runtime builds use.
       sceneRecord["spline.activeSceneBackground"] = null;
       sceneRecord["spline.activeBackgroundColor"] = {
         r: 0,
@@ -354,12 +401,9 @@ function SplineSphere({
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       {/* Sized so the visible 3D mesh inside the Spline scene reads as
-          slightly larger than the 42rem gradient sphere it floats over.
-          The scene only fills ~60% of its canvas, so the container is
-          considerably larger than the gradient to make the rendered
-          sphere itself end up bigger. */}
+          slightly larger than the 42rem gradient sphere it floats over. */}
       <motion.div
-        style={reduce ? undefined : { x, y, scale }}
+        style={reduce ? undefined : { scale, rotate }}
         className="relative h-[68rem] w-[68rem] will-change-transform"
       >
         <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
