@@ -54,8 +54,11 @@ function seededStars(
       size,
       duration: 3.6 + rand() * 6.4,
       delay: rand() * 9,
-      baseOpacity: 0.12 + rand() * 0.28,
-      twinkleOpacity: 0.55 + rand() * 0.35,
+      // Stars sit alongside the bright 95% dotted sphere, so they need
+      // to read clearly against the dark background rather than being
+      // a barely-visible texture.
+      baseOpacity: 0.4 + rand() * 0.35,
+      twinkleOpacity: 0.85 + rand() * 0.15,
     };
   });
 }
@@ -82,9 +85,9 @@ export function Atmosphere() {
 
   // Three independent star fields so layered parallax reads as depth rather
   // than a single field sliding behind the sphere.
-  const farStars = useMemo(() => seededStars(110, 1337, { sizeBias: "tiny" }), []);
-  const midStars = useMemo(() => seededStars(70, 4242, { sizeBias: "small" }), []);
-  const nearStars = useMemo(() => seededStars(34, 9001, { sizeBias: "near" }), []);
+  const farStars = useMemo(() => seededStars(160, 1337, { sizeBias: "tiny" }), []);
+  const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
+  const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
 
   // Per-layer parallax: far moves the least, near the most. Vertical drift is
   // larger than horizontal so scrolling reads as descent through the field.
@@ -462,7 +465,7 @@ function StarField({
             opacity: s.baseOpacity,
             boxShadow:
               glow && s.size >= 1.25
-                ? `0 0 ${s.size * 2}px rgba(255,255,255,0.45)`
+                ? `0 0 ${s.size * 2.5}px rgba(255,255,255,0.7)`
                 : undefined,
             animation: reduce
               ? undefined
