@@ -286,8 +286,15 @@ function ParallaxLayer({
 }
 
 // Spline scene that replaces the previous canvas-based dotted sphere.
-// The scene drives its own internal rotation; the user-driven rotation we
-// apply here is a Z-axis spin on the wrapper, layered on top of that.
+// The scene drives its own internal rotation.
+//
+// NOTE: origin/main migrated to a different scene URL
+// ("x8loCVRSMhnir2Bk") that is authored transparent at the scene level
+// and renders centered. We deliberately keep the original URL here
+// because the very recent on-branch tuning (canvas size, transparency
+// hack below, and the -3.25rem vertical offset) is calibrated for it.
+// Switching scene URLs is a visual/UX decision that should be made
+// explicitly rather than through a silent merge resolution.
 const SPLINE_SCENE_URL =
   "https://prod.spline.design/Wd4JDyAI5bMaIyzV/scene.splinecode";
 
