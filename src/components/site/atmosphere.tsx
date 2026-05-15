@@ -353,11 +353,14 @@ function SplineSphere({
 
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Container matches the previous dotted-sphere footprint so the
-          Spline canvas sits in the same place in the composition. */}
+      {/* Sized so the visible 3D mesh inside the Spline scene reads as
+          slightly larger than the 42rem gradient sphere it floats over.
+          The scene only fills ~60% of its canvas, so the container is
+          considerably larger than the gradient to make the rendered
+          sphere itself end up bigger. */}
       <motion.div
         style={reduce ? undefined : { x, y, scale }}
-        className="relative h-[58rem] w-[58rem] will-change-transform"
+        className="relative h-[68rem] w-[68rem] will-change-transform"
       >
         <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
       </motion.div>
