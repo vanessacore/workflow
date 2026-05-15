@@ -1,6 +1,7 @@
 "use client";
 
 import Spline from "@splinetool/react-spline";
+import type { Application } from "@splinetool/runtime";
 import {
   motion,
   useReducedMotion,
@@ -9,7 +10,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 type Star = {
   left: string;
@@ -303,6 +304,13 @@ function SplineSphere({
   scale: MotionValue<number>;
   reduce: boolean;
 }) {
+  // Clear the scene's baked background once Spline finishes loading so
+  // the canvas is transparent and the gradient sphere + starfield behind
+  // it remain visible.
+  const handleLoad = useCallback((app: Application) => {
+    app.setBackgroundColor("rgba(0,0,0,0)");
+  }, []);
+
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       {/* Container matches the previous dotted-sphere footprint so the
@@ -311,7 +319,7 @@ function SplineSphere({
         style={reduce ? undefined : { x, y, scale }}
         className="relative h-[58rem] w-[58rem] will-change-transform"
       >
-        <Spline scene={SPLINE_SCENE_URL} />
+        <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
       </motion.div>
     </div>
   );
