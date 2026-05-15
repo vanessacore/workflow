@@ -338,7 +338,12 @@ function SplineSphere({
   }, []);
 
   return (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+    // The Spline scene composes the visible sphere with a particle disk
+    // hanging below it. Centering the canvas geometrically (top-1/2) drops
+    // the perceived center of mass below the viewport center, which reads as
+    // a vertical offset against the gradient halo. Shift the wrapper up so
+    // the rendered sphere visually lines up with the halo above it.
+    <div className="absolute left-1/2 top-[calc(50%-3.25rem)] -translate-x-1/2 -translate-y-1/2">
       {/* Sized so the visible 3D mesh inside the Spline scene reads as
           slightly larger than the 42rem gradient sphere it floats over. */}
       <motion.div
