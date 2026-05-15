@@ -73,22 +73,15 @@ export function Atmosphere() {
   const reduce = useReducedMotion();
 
   // User-driven interaction state. zoom is normalised 0..1 across the full
-  // travel from "way out" to "right up against the camera"; rotation is the
-  // accumulated horizontal drag delta in degrees.
+  // travel from "way out" to "right up against the camera".
   const zoom = useMotionValue(ZOOM_DEFAULT);
-  const rotation = useMotionValue(0);
 
-  // Spring smoothing so wheel "kicks" and drag flicks feel weighty rather
-  // than instant. Slightly under-damped for a tactile feel.
+  // Spring smoothing so wheel "kicks" feel weighty rather than instant.
+  // Slightly under-damped for a tactile feel.
   const smoothZoom = useSpring(zoom, {
     stiffness: 70,
     damping: 22,
     mass: 0.55,
-  });
-  const smoothRotation = useSpring(rotation, {
-    stiffness: 85,
-    damping: 26,
-    mass: 0.5,
   });
 
   useEffect(() => {
@@ -109,50 +102,13 @@ export function Atmosphere() {
       zoom.set(clamp(zoom.get() + step));
     }
 
-    let activePointer: number | null = null;
-    let lastX = 0;
-
-    function onPointerDown(e: PointerEvent) {
-      // Ignore non-primary mouse buttons. Touch + pen always pass.
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      // Don't hijack drags that start on interactive controls (links, buttons,
-      // form fields). Keeps the hero CTAs and other UI clickable.
-      const target = e.target as Element | null;
-      if (target && target.closest("a, button, input, textarea, select, [role='button']")) {
-        return;
-      }
-      activePointer = e.pointerId;
-      lastX = e.clientX;
-    }
-    function onPointerMove(e: PointerEvent) {
-      if (activePointer !== e.pointerId) return;
-      const dx = e.clientX - lastX;
-      lastX = e.clientX;
-      // 0.45 deg per CSS pixel — a full screen-width drag spins ~half a turn,
-      // which feels responsive without being twitchy.
-      rotation.set(rotation.get() + dx * 0.45);
-    }
-    function onPointerUp(e: PointerEvent) {
-      if (activePointer === e.pointerId) {
-        activePointer = null;
-      }
-    }
-
     // We always want the wheel handler to be non-passive so we can preventDefault.
     window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
 
     return () => {
       window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
     };
-  }, [reduce, zoom, rotation]);
+  }, [reduce, zoom]);
 
   // Three independent star fields so layered parallax reads as depth rather
   // than a single field sliding behind the sphere.
@@ -174,11 +130,6 @@ export function Atmosphere() {
   const sphereScale = useTransform(smoothZoom, [0, 1], [0.82, 1.18]);
   const dotsScale = useTransform(smoothZoom, [0, 1], [0.55, 1.9]);
 
-  // Both spheres share the same rotation source so they spin together, but the
-  // farther gradient turns a touch slower — another small depth cue.
-  const sphereRotate = useTransform(smoothRotation, (v) => v * 0.75);
-  const dotsRotate = smoothRotation;
-
   return (
     <div
       aria-hidden
@@ -197,17 +148,9 @@ export function Atmosphere() {
         <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
-      <GradientSphere
-        scale={sphereScale}
-        rotate={sphereRotate}
-        reduce={!!reduce}
-      />
+      <GradientSphere scale={sphereScale} reduce={!!reduce} />
 
-      <SplineSphere
-        scale={dotsScale}
-        rotate={dotsRotate}
-        reduce={!!reduce}
-      />
+      <SplineSphere scale={dotsScale} reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -218,18 +161,16 @@ export function Atmosphere() {
 
 function GradientSphere({
   scale,
-  rotate,
   reduce,
 }: {
   scale: MotionValue<number>;
-  rotate: MotionValue<number>;
   reduce: boolean;
 }) {
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Outer wrapper: user-driven zoom (scale) + rotation. */}
+      {/* Outer wrapper: user-driven zoom (scale). */}
       <motion.div
-        style={reduce ? undefined : { scale, rotate }}
+        style={reduce ? undefined : { scale }}
         className="relative h-[42rem] w-[42rem] will-change-transform"
       >
         {/* Inner wrapper: subtle continuous breathing while idle. Composes
@@ -352,11 +293,9 @@ const SPLINE_SCENE_URL =
 
 function SplineSphere({
   scale,
-  rotate,
   reduce,
 }: {
   scale: MotionValue<number>;
-  rotate: MotionValue<number>;
   reduce: boolean;
 }) {
   // Force the Spline canvas to render with a transparent clear color so the
@@ -403,7 +342,7 @@ function SplineSphere({
       {/* Sized so the visible 3D mesh inside the Spline scene reads as
           slightly larger than the 42rem gradient sphere it floats over. */}
       <motion.div
-        style={reduce ? undefined : { scale, rotate }}
+        style={reduce ? undefined : { scale }}
         className="relative h-[68rem] w-[68rem] will-change-transform"
       >
         <Spline scene={SPLINE_SCENE_URL} onLoad={handleLoad} />
