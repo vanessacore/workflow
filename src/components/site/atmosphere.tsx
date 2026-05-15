@@ -8,7 +8,9 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
+
+import { SplineSphere } from "./spline-sphere";
 
 type Star = {
   left: string;
@@ -104,11 +106,11 @@ export function Atmosphere() {
   const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
   const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
-  // The dotted sphere is its own layer that parallaxes a touch more
+  // The Spline sphere is its own layer that parallaxes a touch more
   // aggressively than the gradient — it sits in front of it.
-  const dotsScale = useTransform(smooth, [0, 1], [0.95, 1.5]);
-  const dotsY = useTransform(smooth, [0, 1], ["0%", "-11%"]);
-  const dotsX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+  const splineScale = useTransform(smooth, [0, 1], [0.95, 1.5]);
+  const splineY = useTransform(smooth, [0, 1], ["0%", "-11%"]);
+  const splineX = useTransform(smooth, [0, 1], ["0%", "5%"]);
 
   return (
     <div
@@ -135,11 +137,10 @@ export function Atmosphere() {
         reduce={!!reduce}
       />
 
-      <DottedSphere
-        x={dotsX}
-        y={dotsY}
-        scale={dotsScale}
-        scrollProgress={smooth}
+      <SplineSphere
+        x={splineX}
+        y={splineY}
+        scale={splineScale}
         reduce={!!reduce}
       />
 
@@ -283,165 +284,6 @@ function ParallaxLayer({
     <motion.div style={style} className="absolute inset-0 will-change-transform">
       {children}
     </motion.div>
-  );
-}
-
-type SphereDot = {
-  x: number;
-  y: number;
-  z: number;
-  // Per-dot size multiplier so each dot reads at its own size — this
-  // is what makes the cloud feel irregular instead of a perfect
-  // lattice. Alpha is uniform across all dots, so size carries depth.
-  sizeMul: number;
-};
-
-// Uniformly random points on the unit sphere using the inverse-CDF
-// method (`cos(theta) ~ U[-1,1]`, `phi ~ U[0,2pi]`). Combined with a
-// seeded RNG so the layout is stable across renders.
-function randomSphereDots(n: number, seed: number): SphereDot[] {
-  const rand = makeRand(seed);
-  const dots: SphereDot[] = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const u = rand();
-    const v = rand();
-    const theta = 2 * Math.PI * u;
-    const cosPhi = 2 * v - 1;
-    const sinPhi = Math.sqrt(Math.max(0, 1 - cosPhi * cosPhi));
-    const x = sinPhi * Math.cos(theta);
-    const y = sinPhi * Math.sin(theta);
-    const z = cosPhi;
-
-    // Bias size toward small with occasional larger dots (`pow > 1`
-    // squashes most values toward 0 and lets a few stretch out).
-    const sizeRoll = Math.pow(rand(), 1.7);
-    const sizeMul = 0.45 + sizeRoll * 1.85;
-
-    dots[i] = { x, y, z, sizeMul };
-  }
-  return dots;
-}
-
-function DottedSphere({
-  x,
-  y,
-  scale,
-  scrollProgress,
-  reduce,
-}: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
-  scale: MotionValue<number>;
-  scrollProgress: MotionValue<number>;
-  reduce: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const points = useMemo(() => randomSphereDots(620, 90210), []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-
-    let scrollVal = scrollProgress.get();
-    const unsub = scrollProgress.on("change", (v) => {
-      scrollVal = v;
-    });
-
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const w = Math.max(1, Math.floor(rect.width * dpr));
-      const h = Math.max(1, Math.floor(rect.height * dpr));
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-
-    let raf = 0;
-    const start = performance.now();
-    const renderFrame = (t: number) => {
-      const elapsed = (t - start) / 1000;
-      // Idle: very slow rotation around Y, gentle wobble around X.
-      // Scroll: adds extra rotation so the sphere clearly accelerates
-      // its spin while the user scrolls (~0.8 turns across full scroll).
-      const rotY = elapsed * 0.045 + scrollVal * Math.PI * 1.6;
-      const rotX =
-        Math.sin(elapsed * 0.018) * 0.18 + (scrollVal - 0.5) * 0.55;
-
-      const cosY = Math.cos(rotY);
-      const sinY = Math.sin(rotY);
-      const cosX = Math.cos(rotX);
-      const sinX = Math.sin(rotX);
-
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-      const cx = w / 2;
-      const cy = h / 2;
-      const r = Math.min(w, h) * 0.5 * 0.78;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // All dots render at a uniform 95% white. Depth perception is
-      // carried by per-dot size variation alone, so back-facing dots
-      // stay equally bright but smaller.
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
-
-      for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-        // Rotate around Y, then X.
-        const x1 = p.x * cosY + p.z * sinY;
-        const z1 = -p.x * sinY + p.z * cosY;
-        const y1 = p.y * cosX - z1 * sinX;
-        const z2 = p.y * sinX + z1 * cosX;
-
-        const depth = (z2 + 1) / 2;
-        const dotSize = (0.3 + depth * 1.45) * p.sizeMul;
-
-        const px = cx + x1 * r;
-        const py = cy + y1 * r;
-
-        ctx.beginPath();
-        ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (!reduce) {
-        raf = requestAnimationFrame(renderFrame);
-      }
-    };
-    raf = requestAnimationFrame(renderFrame);
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      unsub();
-    };
-  }, [points, scrollProgress, reduce]);
-
-  return (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Container is larger than the gradient sphere (42rem) so the dot
-          silhouette orbits well outside the gradient's bright core,
-          leaving a clear gap between the two layers. */}
-      <motion.div
-        style={reduce ? undefined : { x, y, scale }}
-        className="relative h-[58rem] w-[58rem] will-change-transform"
-      >
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full"
-        />
-      </motion.div>
-    </div>
   );
 }
 
