@@ -283,21 +283,43 @@ function ParallaxLayer({
   );
 }
 
-// Even point distribution on a unit sphere (Fibonacci lattice). Returns
-// `[x, y, z]` triples on the unit sphere; consumed by `DottedSphere`.
-function fibonacciSphere(n: number): [number, number, number][] {
-  const points: [number, number, number][] = [];
-  const offset = 2 / n;
-  const inc = Math.PI * (3 - Math.sqrt(5));
+type SphereDot = {
+  x: number;
+  y: number;
+  z: number;
+  // Per-dot multipliers so each dot reads at a different size and
+  // brightness — this is what makes the cloud feel irregular instead
+  // of a perfect lattice.
+  sizeMul: number;
+  alphaMul: number;
+};
+
+// Uniformly random points on the unit sphere using the inverse-CDF
+// method (`cos(theta) ~ U[-1,1]`, `phi ~ U[0,2pi]`). Combined with a
+// seeded RNG so the layout is stable across renders. Per-dot size and
+// alpha multipliers add the "some big, some tiny" irregularity.
+function randomSphereDots(n: number, seed: number): SphereDot[] {
+  const rand = makeRand(seed);
+  const dots: SphereDot[] = new Array(n);
   for (let i = 0; i < n; i++) {
-    const y = i * offset - 1 + offset / 2;
-    const r = Math.sqrt(Math.max(0, 1 - y * y));
-    const phi = i * inc;
-    const x = Math.cos(phi) * r;
-    const z = Math.sin(phi) * r;
-    points.push([x, y, z]);
+    const u = rand();
+    const v = rand();
+    const theta = 2 * Math.PI * u;
+    const cosPhi = 2 * v - 1;
+    const sinPhi = Math.sqrt(Math.max(0, 1 - cosPhi * cosPhi));
+    const x = sinPhi * Math.cos(theta);
+    const y = sinPhi * Math.sin(theta);
+    const z = cosPhi;
+
+    // Bias size toward small with occasional larger dots (`pow > 1`
+    // squashes most values toward 0 and lets a few stretch out).
+    const sizeRoll = Math.pow(rand(), 1.7);
+    const sizeMul = 0.45 + sizeRoll * 1.85;
+    const alphaMul = 0.65 + rand() * 0.55;
+
+    dots[i] = { x, y, z, sizeMul, alphaMul };
   }
-  return points;
+  return dots;
 }
 
 function DottedSphere({
@@ -314,7 +336,7 @@ function DottedSphere({
   reduce: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const points = useMemo(() => fibonacciSphere(560), []);
+  const points = useMemo(() => randomSphereDots(620, 90210), []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -366,22 +388,25 @@ function DottedSphere({
       ctx.clearRect(0, 0, w, h);
 
       for (let i = 0; i < points.length; i++) {
-        const [x0, y0, z0] = points[i];
+        const p = points[i];
         // Rotate around Y, then X.
-        const x1 = x0 * cosY + z0 * sinY;
-        const z1 = -x0 * sinY + z0 * cosY;
-        const y1 = y0 * cosX - z1 * sinX;
-        const z2 = y0 * sinX + z1 * cosX;
+        const x1 = p.x * cosY + p.z * sinY;
+        const z1 = -p.x * sinY + p.z * cosY;
+        const y1 = p.y * cosX - z1 * sinX;
+        const z2 = p.y * sinX + z1 * cosX;
 
-        // Map z (-1 back, +1 front) to depth in [0, 1].
+        // Map z (-1 back, +1 front) to depth in [0, 1], then mix with
+        // the per-dot multipliers so size and brightness vary
+        // independently of pure depth — that's what makes the cloud
+        // feel irregular instead of a precise lattice.
         const depth = (z2 + 1) / 2;
-        const dotSize = 0.35 + depth * 1.55;
-        const alpha = 0.05 + depth * 0.78;
+        const dotSize = (0.3 + depth * 1.45) * p.sizeMul;
+        const alpha = (0.05 + depth * 0.78) * p.alphaMul;
 
         const px = cx + x1 * r;
         const py = cy + y1 * r;
 
-        ctx.globalAlpha = alpha;
+        ctx.globalAlpha = Math.min(1, alpha);
         ctx.beginPath();
         ctx.arc(px, py, dotSize, 0, Math.PI * 2);
         ctx.fillStyle = "white";
