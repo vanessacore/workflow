@@ -8,7 +8,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 type Star = {
   left: string;
@@ -101,6 +101,12 @@ export function Atmosphere() {
   const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
   const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
+  // The dotted sphere is its own layer that parallaxes a touch more
+  // aggressively than the gradient — it sits in front of it.
+  const dotsScale = useTransform(smooth, [0, 1], [0.95, 1.5]);
+  const dotsY = useTransform(smooth, [0, 1], ["0%", "-11%"]);
+  const dotsX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+
   return (
     <div
       aria-hidden
@@ -123,6 +129,14 @@ export function Atmosphere() {
         x={sphereX}
         y={sphereY}
         scale={sphereScale}
+        reduce={!!reduce}
+      />
+
+      <DottedSphere
+        x={dotsX}
+        y={dotsY}
+        scale={dotsScale}
+        scrollProgress={smooth}
         reduce={!!reduce}
       />
 
@@ -266,6 +280,143 @@ function ParallaxLayer({
     <motion.div style={style} className="absolute inset-0 will-change-transform">
       {children}
     </motion.div>
+  );
+}
+
+// Even point distribution on a unit sphere (Fibonacci lattice). Returns
+// `[x, y, z]` triples on the unit sphere; consumed by `DottedSphere`.
+function fibonacciSphere(n: number): [number, number, number][] {
+  const points: [number, number, number][] = [];
+  const offset = 2 / n;
+  const inc = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = i * offset - 1 + offset / 2;
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const phi = i * inc;
+    const x = Math.cos(phi) * r;
+    const z = Math.sin(phi) * r;
+    points.push([x, y, z]);
+  }
+  return points;
+}
+
+function DottedSphere({
+  x,
+  y,
+  scale,
+  scrollProgress,
+  reduce,
+}: {
+  x: MotionValue<string>;
+  y: MotionValue<string>;
+  scale: MotionValue<number>;
+  scrollProgress: MotionValue<number>;
+  reduce: boolean;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const points = useMemo(() => fibonacciSphere(560), []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+
+    let scrollVal = scrollProgress.get();
+    const unsub = scrollProgress.on("change", (v) => {
+      scrollVal = v;
+    });
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(1, Math.floor(rect.width * dpr));
+      const h = Math.max(1, Math.floor(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+
+    let raf = 0;
+    const start = performance.now();
+    const renderFrame = (t: number) => {
+      const elapsed = (t - start) / 1000;
+      // Idle: very slow rotation around Y, gentle wobble around X.
+      // Scroll: adds extra rotation so the sphere clearly accelerates
+      // its spin while the user scrolls (~0.8 turns across full scroll).
+      const rotY = elapsed * 0.045 + scrollVal * Math.PI * 1.6;
+      const rotX =
+        Math.sin(elapsed * 0.018) * 0.18 + (scrollVal - 0.5) * 0.55;
+
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      const cosX = Math.cos(rotX);
+      const sinX = Math.sin(rotX);
+
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = Math.min(w, h) * 0.5 * 0.78;
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (let i = 0; i < points.length; i++) {
+        const [x0, y0, z0] = points[i];
+        // Rotate around Y, then X.
+        const x1 = x0 * cosY + z0 * sinY;
+        const z1 = -x0 * sinY + z0 * cosY;
+        const y1 = y0 * cosX - z1 * sinX;
+        const z2 = y0 * sinX + z1 * cosX;
+
+        // Map z (-1 back, +1 front) to depth in [0, 1].
+        const depth = (z2 + 1) / 2;
+        const dotSize = 0.35 + depth * 1.55;
+        const alpha = 0.05 + depth * 0.78;
+
+        const px = cx + x1 * r;
+        const py = cy + y1 * r;
+
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(px, py, dotSize, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      if (!reduce) {
+        raf = requestAnimationFrame(renderFrame);
+      }
+    };
+    raf = requestAnimationFrame(renderFrame);
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      unsub();
+    };
+  }, [points, scrollProgress, reduce]);
+
+  return (
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <motion.div
+        style={reduce ? undefined : { x, y, scale }}
+        className="relative h-[42rem] w-[42rem] will-change-transform"
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 h-full w-full"
+        />
+      </motion.div>
+    </div>
   );
 }
 
