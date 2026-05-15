@@ -304,11 +304,51 @@ function SplineSphere({
   scale: MotionValue<number>;
   reduce: boolean;
 }) {
-  // Clear the scene's baked background once Spline finishes loading so
-  // the canvas is transparent and the gradient sphere + starfield behind
-  // it remain visible.
+  // Make the Spline canvas transparent so the gradient sphere +
+  // starfield behind it remain visible. The Spline runtime keeps a
+  // colored background on the THREE.Scene and clears the WebGL canvas
+  // with that color, so the canvas paints opaque pixels even when the
+  // page wants to show layers behind it. The public `setBackgroundColor`
+  // API runs the value through THREE.Color, which strips alpha — so it
+  // can only swap one opaque color for another. Instead, reach through
+  // the internal renderer + scene to:
+  //   1. null out the scene background object (removes the colored
+  //      background plane the renderer draws each frame),
+  //   2. force the renderer's clear color to fully transparent.
   const handleLoad = useCallback((app: Application) => {
-    app.setBackgroundColor("rgba(0,0,0,0)");
+    type ColorLike = { r: number; g: number; b: number };
+    type RendererLike = {
+      setClearColor?: (color: number, alpha: number) => void;
+      setClearAlpha?: (alpha: number) => void;
+    };
+    type SceneLike = {
+      background?: unknown;
+      fog?: unknown;
+    };
+    const internal = app as unknown as {
+      _scene?: SceneLike;
+      _renderer?: RendererLike;
+      scene?: SceneLike;
+      renderer?: RendererLike;
+    };
+    const scene = internal._scene ?? internal.scene;
+    const renderer = internal._renderer ?? internal.renderer;
+    if (scene) {
+      const sceneRecord = scene as SceneLike & Record<string, unknown>;
+      // THREE.Scene.background — can be a Color, Texture, or null.
+      sceneRecord.background = null;
+      // The Spline-tagged background reference some runtime builds use.
+      sceneRecord["spline.activeSceneBackground"] = null;
+      sceneRecord["spline.activeBackgroundColor"] = {
+        r: 0,
+        g: 0,
+        b: 0,
+      } satisfies ColorLike;
+    }
+    if (renderer) {
+      renderer.setClearColor?.(0x000000, 0);
+      renderer.setClearAlpha?.(0);
+    }
   }, []);
 
   return (
