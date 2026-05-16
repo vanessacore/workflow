@@ -109,6 +109,15 @@ export function Atmosphere() {
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      style={{
+        // Shared base used to size both the gradient sphere and the Spline
+        // canvas. Capped at the original 42rem on large displays, and scaled
+        // down with vmin on smaller viewports so the sphere never overflows
+        // the screen. Both layers derive from this single value so the
+        // Spline mesh stays aligned with the gradient sphere body at every
+        // screen size.
+        ["--sphere-size" as string]: "min(42rem, 85vmin)",
+      }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(40,30,100,0.14),_transparent_55%)]" />
@@ -154,8 +163,12 @@ function GradientSphere({
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       {/* Outer wrapper: scroll-driven parallax (translate + scale). */}
       <motion.div
-        style={reduce ? undefined : { x, y, scale }}
-        className="relative h-[42rem] w-[42rem] will-change-transform"
+        style={
+          reduce
+            ? { width: "var(--sphere-size)", height: "var(--sphere-size)" }
+            : { x, y, scale, width: "var(--sphere-size)", height: "var(--sphere-size)" }
+        }
+        className="relative will-change-transform"
       >
         {/* Inner wrapper: subtle continuous breathing while idle. Composes
             multiplicatively with the scroll-driven scale on the parent. */}
@@ -279,13 +292,20 @@ function SplineSphere() {
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
       {/*
-        80rem canvas sizes the visible 3D mesh to ~15% larger than the
-        gradient sphere's visible body. At this canvas size, this
-        Spline scene renders its mesh near the canvas center, so the
-        canvas wrapper alone (centered via -translate-x/y-1/2) lands
-        the visible content on the gradient sphere's center.
+        Canvas size is derived from the shared `--sphere-size` variable so
+        the visible 3D mesh stays ~15% larger than the gradient sphere's
+        visible body at every viewport size. The 80/42 multiplier matches
+        the original fixed 80rem-canvas / 42rem-sphere ratio. The Spline
+        scene renders its mesh near the canvas center, so the centered
+        wrapper lands the visible content on the gradient sphere's center.
       */}
-      <div className="relative h-[80rem] w-[80rem]">
+      <div
+        className="relative"
+        style={{
+          width: "calc(var(--sphere-size) * 80 / 42)",
+          height: "calc(var(--sphere-size) * 80 / 42)",
+        }}
+      >
         <Spline scene="https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode" />
       </div>
     </div>
