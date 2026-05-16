@@ -30,9 +30,12 @@ const SPLINE_SCENE_URL =
 // 3D mesh (and not just empty canvas) becomes the outer, larger sphere.
 const GRADIENT_SPHERE_REM = 42;
 const SPLINE_SPHERE_REM = GRADIENT_SPHERE_REM;
-// Multiplier applied via CSS scale on top of the parallax scale. Chosen so
-// the rendered 3D sphere visibly wraps *outside* the gradient halo.
-const SPLINE_MESH_SCALE = 3.6;
+// Multiplier applied via CSS scale on top of the parallax scale. Tuned
+// empirically so the rendered 3D sphere is ~15% larger than the visible
+// gradient halo (Spline's fixed-camera scene means its mesh occupies only
+// a fraction of the canvas, so we have to over-scale the canvas to get the
+// mesh to the size we want).
+const SPLINE_MESH_SCALE = 2.45;
 
 type Star = {
   left: string;
