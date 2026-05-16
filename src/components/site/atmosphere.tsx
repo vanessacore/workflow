@@ -22,11 +22,17 @@ const Spline = dynamic(() => import("@splinetool/react-spline"), {
 const SPLINE_SCENE_URL =
   "https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode";
 
-// Gradient sphere container size in rem. The Spline sphere is sized 20%
-// larger so the two halos read as two concentric shells rather than a
-// single object.
+// Gradient sphere container size in rem. The Spline scene composes its 3D
+// sphere mesh with a fixed-distance camera, so growing the canvas alone
+// just adds transparent padding rather than enlarging the visible mesh.
+// Instead we render the Spline canvas at the same nominal size as the
+// gradient sphere and uniformly scale it up with a CSS transform so the
+// 3D mesh (and not just empty canvas) becomes the outer, larger sphere.
 const GRADIENT_SPHERE_REM = 42;
-const SPLINE_SPHERE_REM = GRADIENT_SPHERE_REM * 1.2;
+const SPLINE_SPHERE_REM = GRADIENT_SPHERE_REM;
+// Multiplier applied via CSS scale on top of the parallax scale. Chosen so
+// the rendered 3D sphere visibly wraps *outside* the gradient halo.
+const SPLINE_MESH_SCALE = 3.6;
 
 type Star = {
   left: string;
@@ -161,8 +167,8 @@ export function Atmosphere() {
         <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
-      <GradientSphere scale={sphereScale} reduce={!!reduce} />
       <SplineSphere scale={sphereScale} reduce={!!reduce} />
+      <GradientSphere scale={sphereScale} reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -289,15 +295,19 @@ function SplineSphere({
   scale: MotionValue<number>;
   reduce: boolean;
 }) {
+  // Compose the user-driven zoom (`scale`) with the static mesh multiplier
+  // so the Spline sphere stays SPLINE_MESH_SCALE times bigger than the
+  // gradient sphere at every zoom level.
+  const composedScale = useTransform(scale, (s) => s * SPLINE_MESH_SCALE);
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Same zoom/parallax response as GradientSphere, just sized 20% larger
-          so the 3D sphere reads as the outer shell of the composition. */}
       <motion.div
         style={{
           width: `${SPLINE_SPHERE_REM}rem`,
           height: `${SPLINE_SPHERE_REM}rem`,
-          ...(reduce ? undefined : { scale }),
+          ...(reduce
+            ? { transform: `scale(${SPLINE_MESH_SCALE})` }
+            : { scale: composedScale }),
         }}
         className="relative will-change-transform"
       >
