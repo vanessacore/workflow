@@ -27,7 +27,7 @@ export function Hero() {
         />
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+      <div className="relative mx-auto hidden w-full max-w-6xl flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -120,7 +120,7 @@ export function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.6, delay: 1.4 }}
-        className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center md:hidden"
+        className="pointer-events-none absolute inset-x-0 bottom-6 hidden justify-center"
       >
         <div className="flex flex-col items-center gap-2 text-[10.5px] uppercase tracking-[0.3em] text-foreground/40">
           <span>Scroll</span>

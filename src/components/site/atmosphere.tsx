@@ -80,6 +80,20 @@ export function Atmosphere() {
   const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
   const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
 
+  // Pick 5 deterministic near-layer particles and attach dummy labels. Anchored
+  // to the near star field so the labels track with their stars under parallax.
+  const labeledParticles = useMemo(() => {
+    const rand = makeRand(2222);
+    const picks = new Set<number>();
+    while (picks.size < 5) {
+      picks.add(Math.floor(rand() * nearStars.length));
+    }
+    return Array.from(picks).map((idx, i) => ({
+      star: nearStars[idx],
+      text: `Work ${i + 1}`,
+    }));
+  }, [nearStars]);
+
   // Per-layer parallax: far moves the least, near the most. Vertical drift is
   // larger than horizontal so scrolling reads as descent through the field.
   const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
@@ -114,6 +128,7 @@ export function Atmosphere() {
       </ParallaxLayer>
       <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
         <StarField stars={nearStars} reduce={!!reduce} glow />
+        <ParticleLabels labels={labeledParticles} />
       </ParallaxLayer>
 
       <SplineSphere />
@@ -170,6 +185,30 @@ function SplineSphere() {
       >
         <Spline scene="https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode" />
       </div>
+    </div>
+  );
+}
+
+function ParticleLabels({
+  labels,
+}: {
+  labels: { star: Star; text: string }[];
+}) {
+  return (
+    <div className="absolute inset-0">
+      {labels.map((l, i) => (
+        <span
+          key={i}
+          className="absolute -translate-x-1/2 text-[10.5px] font-medium uppercase tracking-[0.22em] whitespace-nowrap text-white/80"
+          style={{
+            left: l.star.left,
+            top: `calc(${l.star.top} + ${Math.max(l.star.size, 1) + 8}px)`,
+            textShadow: "0 0 10px rgba(0,0,0,0.7)",
+          }}
+        >
+          {l.text}
+        </span>
+      ))}
     </div>
   );
 }
