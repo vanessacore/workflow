@@ -9,7 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type Star = {
   left: string;
@@ -235,6 +235,11 @@ function ParticleLabel({
   text: string;
   reduce: boolean;
 }) {
+  // Hover state is driven by the text span (small precise hit target) but the
+  // animation runs on the outer motion wrapper so the dot, leader line, and
+  // text all scale + wiggle together as a single annotation.
+  const [hovered, setHovered] = useState(false);
+
   // Distance from the anchor particle dot to the start of the label, along
   // the outward radial direction. The leader line spans this distance.
   const leaderPx = 22;
@@ -242,10 +247,39 @@ function ParticleLabel({
   const lineAngleRad = Math.atan2(outDy, outDx);
   const labelOnRight = outDx >= 0;
 
+  const animate = hovered
+    ? reduce
+      ? { scale: 1.5, x: 0, y: 0, rotate: 0 }
+      : {
+          scale: 1.55,
+          x: [0, -1.8, 2.4, -1.2, 1.6, 0],
+          y: [0, 1.4, -2.0, 1.7, -1.1, 0],
+          rotate: [0, -1.6, 2.0, -1.0, 1.2, 0],
+        }
+    : { scale: 1, x: 0, y: 0, rotate: 0 };
+
+  const transition =
+    hovered && !reduce
+      ? {
+          scale: { duration: 0.22, ease: "easeOut" as const },
+          x: { duration: 1.1, repeat: Infinity, ease: "easeInOut" as const },
+          y: { duration: 1.35, repeat: Infinity, ease: "easeInOut" as const },
+          rotate: { duration: 1.05, repeat: Infinity, ease: "easeInOut" as const },
+        }
+      : { duration: 0.28, ease: "easeOut" as const };
+
   return (
-    <div
+    <motion.div
       className="absolute"
-      style={{ left: `${cxPct}%`, top: `${cyPct}%` }}
+      style={{
+        left: `${cxPct}%`,
+        top: `${cyPct}%`,
+        // Scale + wiggle pivot on the anchor point so the dot stays glued to
+        // its particle while the rest of the annotation grows outward.
+        transformOrigin: "0% 50%",
+      }}
+      animate={animate}
+      transition={transition}
     >
       {/* Highlighted particle dot anchored on the sphere surface. */}
       <span
@@ -271,9 +305,9 @@ function ParticleLabel({
           transform: `rotate(${lineAngleRad}rad)`,
         }}
       />
-      {/* Position wrapper handles the static placement transform so the
-          inner motion span only owns the hover transforms (scale + wiggle)
-          and the two don't fight over the `transform` CSS property. */}
+      {/* Position wrapper for the text. The label span is the hover trigger
+          via pointer-events:auto; the outer motion wrapper handles the actual
+          scale + wiggle for the whole assembly. */}
       <div
         className="absolute"
         style={{
@@ -286,32 +320,14 @@ function ParticleLabel({
       >
         <motion.span
           className="pointer-events-auto inline-block cursor-pointer select-none whitespace-nowrap text-[10.5px] font-medium uppercase tracking-[0.22em] text-white/85"
-          style={{
-            textShadow: "0 0 10px rgba(0,0,0,0.75)",
-            transformOrigin: labelOnRight ? "left center" : "right center",
-          }}
-          whileHover={
-            reduce
-              ? { scale: 1.45 }
-              : {
-                  scale: 1.7,
-                  x: [0, -2.2, 2.6, -1.4, 1.8, 0],
-                  y: [0, 1.6, -2.2, 1.8, -1.2, 0],
-                  rotate: [0, -1.8, 2.2, -1.1, 1.3, 0],
-                  transition: {
-                    scale: { duration: 0.22, ease: "easeOut" },
-                    x: { duration: 1.1, repeat: Infinity, ease: "easeInOut" },
-                    y: { duration: 1.35, repeat: Infinity, ease: "easeInOut" },
-                    rotate: { duration: 1.05, repeat: Infinity, ease: "easeInOut" },
-                  },
-                }
-          }
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          style={{ textShadow: "0 0 10px rgba(0,0,0,0.75)" }}
+          onHoverStart={() => setHovered(true)}
+          onHoverEnd={() => setHovered(false)}
         >
           {text}
         </motion.span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
