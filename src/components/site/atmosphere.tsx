@@ -64,16 +64,6 @@ function seededStars(
   });
 }
 
-// Multi-radial-gradient body of the sphere. Defined once and shared between
-// the soft outer halo and the sharper inner highlight so the layers stay in
-// sync as their positions/hues animate.
-const SPHERE_GRADIENT =
-  "radial-gradient(circle at 28% 30%, rgba(200,140,255,0.95), rgba(200,140,255,0) 48%)," +
-  "radial-gradient(circle at 72% 32%, rgba(120,200,255,0.9), rgba(120,200,255,0) 50%)," +
-  "radial-gradient(circle at 68% 74%, rgba(255,140,200,0.95), rgba(255,140,200,0) 50%)," +
-  "radial-gradient(circle at 28% 70%, rgba(140,255,210,0.8), rgba(140,255,210,0) 52%)," +
-  "radial-gradient(circle at 50% 50%, rgba(255,210,140,0.75), rgba(255,210,140,0) 62%)";
-
 export function Atmosphere() {
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll();
@@ -98,12 +88,6 @@ export function Atmosphere() {
   const midX = useTransform(smooth, [0, 1], ["0%", "3%"]);
   const nearY = useTransform(smooth, [0, 1], ["0%", "-16%"]);
   const nearX = useTransform(smooth, [0, 1], ["0%", "5%"]);
-
-  // Sphere parallax: monotonic, smooth scale + slow drift. No bouncy
-  // multi-stop curve — scroll pushes the sphere forward steadily.
-  const sphereScale = useTransform(smooth, [0, 1], [0.92, 1.35]);
-  const sphereY = useTransform(smooth, [0, 1], ["0%", "-7%"]);
-  const sphereX = useTransform(smooth, [0, 1], ["0%", "3%"]);
 
   return (
     <div
@@ -132,133 +116,11 @@ export function Atmosphere() {
         <StarField stars={nearStars} reduce={!!reduce} glow />
       </ParallaxLayer>
 
-      <GradientSphere
-        x={sphereX}
-        y={sphereY}
-        scale={sphereScale}
-        reduce={!!reduce}
-      />
-
       <SplineSphere />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
       <div className="absolute inset-x-0 top-0 h-px hairline" />
-    </div>
-  );
-}
-
-function GradientSphere({
-  x,
-  y,
-  scale,
-  reduce,
-}: {
-  x: MotionValue<string>;
-  y: MotionValue<string>;
-  scale: MotionValue<number>;
-  reduce: boolean;
-}) {
-  return (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-      {/* Outer wrapper: scroll-driven parallax (translate + scale). */}
-      <motion.div
-        style={
-          reduce
-            ? { width: "var(--sphere-size)", height: "var(--sphere-size)" }
-            : { x, y, scale, width: "var(--sphere-size)", height: "var(--sphere-size)" }
-        }
-        className="relative will-change-transform"
-      >
-        {/* Inner wrapper: subtle continuous breathing while idle. Composes
-            multiplicatively with the scroll-driven scale on the parent. */}
-        <motion.div
-          className="absolute inset-0"
-          animate={reduce ? undefined : { scale: [1, 1.035, 1] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-        >
-          {/* Soft halo layer — large, blurred, hue-cycling very slowly. */}
-          <motion.div
-            className="absolute inset-[-18%] rounded-full"
-            style={{
-              background: SPHERE_GRADIENT,
-              backgroundSize: "180% 180%",
-            }}
-            animate={
-              reduce
-                ? undefined
-                : {
-                    backgroundPosition: [
-                      "0% 0%",
-                      "100% 0%",
-                      "100% 100%",
-                      "0% 100%",
-                      "0% 0%",
-                    ],
-                    filter: [
-                      "hue-rotate(0deg) blur(72px)",
-                      "hue-rotate(90deg) blur(72px)",
-                      "hue-rotate(180deg) blur(72px)",
-                      "hue-rotate(270deg) blur(72px)",
-                      "hue-rotate(360deg) blur(72px)",
-                    ],
-                  }
-            }
-            transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-          />
-
-          {/* Sharper inner highlight — same gradient, opposite drift, even
-              slower hue cycle so the two layers cross-fade gradually. */}
-          <motion.div
-            className="absolute inset-[10%] rounded-full"
-            style={{
-              background: SPHERE_GRADIENT,
-              backgroundSize: "220% 220%",
-              mixBlendMode: "screen",
-            }}
-            animate={
-              reduce
-                ? undefined
-                : {
-                    backgroundPosition: [
-                      "100% 100%",
-                      "0% 100%",
-                      "0% 0%",
-                      "100% 0%",
-                      "100% 100%",
-                    ],
-                    filter: [
-                      "hue-rotate(0deg) blur(32px)",
-                      "hue-rotate(-90deg) blur(32px)",
-                      "hue-rotate(-180deg) blur(32px)",
-                      "hue-rotate(-270deg) blur(32px)",
-                      "hue-rotate(-360deg) blur(32px)",
-                    ],
-                  }
-            }
-            transition={{ duration: 110, repeat: Infinity, ease: "linear" }}
-          />
-
-          {/* Soft outlined glow that breathes very slowly. The amplitude is
-              intentionally narrow so it never punches; just a long swell. */}
-          <motion.div
-            className="absolute inset-[6%] rounded-full"
-            animate={
-              reduce
-                ? { opacity: 0.55 }
-                : {
-                    opacity: [0.5, 0.78, 0.5],
-                    boxShadow: [
-                      "0 0 60px 4px rgba(255,255,255,0.22), 0 0 0 1px rgba(255,255,255,0.18) inset",
-                      "0 0 110px 14px rgba(255,255,255,0.5), 0 0 0 1.5px rgba(255,255,255,0.55) inset",
-                      "0 0 60px 4px rgba(255,255,255,0.22), 0 0 0 1px rgba(255,255,255,0.18) inset",
-                    ],
-                  }
-            }
-            transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
-      </motion.div>
     </div>
   );
 }
