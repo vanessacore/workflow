@@ -80,20 +80,6 @@ export function Atmosphere() {
   const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
   const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
 
-  // Pick 5 deterministic near-layer particles and attach dummy labels. Anchored
-  // to the near star field so the labels track with their stars under parallax.
-  const labeledParticles = useMemo(() => {
-    const rand = makeRand(2222);
-    const picks = new Set<number>();
-    while (picks.size < 5) {
-      picks.add(Math.floor(rand() * nearStars.length));
-    }
-    return Array.from(picks).map((idx, i) => ({
-      star: nearStars[idx],
-      text: `Work ${i + 1}`,
-    }));
-  }, [nearStars]);
-
   // Per-layer parallax: far moves the least, near the most. Vertical drift is
   // larger than horizontal so scrolling reads as descent through the field.
   const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
@@ -128,10 +114,10 @@ export function Atmosphere() {
       </ParallaxLayer>
       <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
         <StarField stars={nearStars} reduce={!!reduce} glow />
-        <ParticleLabels labels={labeledParticles} />
       </ParallaxLayer>
 
       <SplineSphere />
+      <SphereParticleLabels reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -189,26 +175,142 @@ function SplineSphere() {
   );
 }
 
-function ParticleLabels({
-  labels,
-}: {
-  labels: { star: Star; text: string }[];
-}) {
+// Picks 5 deterministic points on the visible dotted sphere body, draws a
+// highlighted "particle" anchor at each, a short leader line, and a label
+// outside the sphere. Hovering a label scales it up and triggers a continuous
+// wiggle so the annotation feels alive.
+function SphereParticleLabels({ reduce }: { reduce: boolean }) {
+  const items = useMemo(() => {
+    const rand = makeRand(7777);
+    return Array.from({ length: 5 }, (_, i) => {
+      // Evenly distribute base angles around the sphere, then jitter each
+      // by ~+/-20deg so the placement reads as "picked" rather than uniform.
+      const baseAngle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const angle = baseAngle + (rand() - 0.5) * 0.7;
+      // 0.40-0.47 of the box puts the anchor on the visible dotted sphere
+      // body (the dotted ball occupies the central ~50% of --sphere-size).
+      const radius = 0.4 + rand() * 0.07;
+      return { angle, radius, text: `Work ${i + 1}` };
+    });
+  }, []);
+
   return (
-    <div className="absolute inset-0">
-      {labels.map((l, i) => (
-        <span
-          key={i}
-          className="absolute -translate-x-1/2 text-[10.5px] font-medium uppercase tracking-[0.22em] whitespace-nowrap text-white/80"
+    <div
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ width: "var(--sphere-size)", height: "var(--sphere-size)" }}
+    >
+      {items.map((p, i) => {
+        const cxPct = 50 + Math.cos(p.angle) * p.radius * 100;
+        const cyPct = 50 + Math.sin(p.angle) * p.radius * 100;
+        const outDx = Math.cos(p.angle);
+        const outDy = Math.sin(p.angle);
+        return (
+          <ParticleLabel
+            key={i}
+            cxPct={cxPct}
+            cyPct={cyPct}
+            outDx={outDx}
+            outDy={outDy}
+            text={p.text}
+            reduce={reduce}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ParticleLabel({
+  cxPct,
+  cyPct,
+  outDx,
+  outDy,
+  text,
+  reduce,
+}: {
+  cxPct: number;
+  cyPct: number;
+  outDx: number;
+  outDy: number;
+  text: string;
+  reduce: boolean;
+}) {
+  // Distance from the anchor particle dot to the start of the label, along
+  // the outward radial direction. The leader line spans this distance.
+  const leaderPx = 22;
+  const labelGapPx = 5;
+  const lineAngleRad = Math.atan2(outDy, outDx);
+  const labelOnRight = outDx >= 0;
+
+  return (
+    <div
+      className="absolute"
+      style={{ left: `${cxPct}%`, top: `${cyPct}%` }}
+    >
+      {/* Highlighted particle dot anchored on the sphere surface. */}
+      <span
+        aria-hidden
+        className="absolute block h-[4px] w-[4px] rounded-full bg-white"
+        style={{
+          left: 0,
+          top: 0,
+          transform: "translate(-50%, -50%)",
+          boxShadow:
+            "0 0 10px rgba(255,255,255,0.95), 0 0 22px rgba(180,200,255,0.7)",
+        }}
+      />
+      {/* Leader line from the particle outward toward the label. */}
+      <span
+        aria-hidden
+        className="absolute block h-px bg-white/40"
+        style={{
+          left: 0,
+          top: 0,
+          width: `${leaderPx}px`,
+          transformOrigin: "0% 50%",
+          transform: `rotate(${lineAngleRad}rad)`,
+        }}
+      />
+      {/* Position wrapper handles the static placement transform so the
+          inner motion span only owns the hover transforms (scale + wiggle)
+          and the two don't fight over the `transform` CSS property. */}
+      <div
+        className="absolute"
+        style={{
+          left: `${outDx * (leaderPx + labelGapPx)}px`,
+          top: `${outDy * (leaderPx + labelGapPx)}px`,
+          transform: labelOnRight
+            ? "translateY(-50%)"
+            : "translate(-100%, -50%)",
+        }}
+      >
+        <motion.span
+          className="pointer-events-auto inline-block cursor-pointer select-none whitespace-nowrap text-[10.5px] font-medium uppercase tracking-[0.22em] text-white/85"
           style={{
-            left: l.star.left,
-            top: `calc(${l.star.top} + ${Math.max(l.star.size, 1) + 8}px)`,
-            textShadow: "0 0 10px rgba(0,0,0,0.7)",
+            textShadow: "0 0 10px rgba(0,0,0,0.75)",
+            transformOrigin: labelOnRight ? "left center" : "right center",
           }}
+          whileHover={
+            reduce
+              ? { scale: 1.45 }
+              : {
+                  scale: 1.7,
+                  x: [0, -2.2, 2.6, -1.4, 1.8, 0],
+                  y: [0, 1.6, -2.2, 1.8, -1.2, 0],
+                  rotate: [0, -1.8, 2.2, -1.1, 1.3, 0],
+                  transition: {
+                    scale: { duration: 0.22, ease: "easeOut" },
+                    x: { duration: 1.1, repeat: Infinity, ease: "easeInOut" },
+                    y: { duration: 1.35, repeat: Infinity, ease: "easeInOut" },
+                    rotate: { duration: 1.05, repeat: Infinity, ease: "easeInOut" },
+                  },
+                }
+          }
+          transition={{ duration: 0.25, ease: "easeOut" }}
         >
-          {l.text}
-        </span>
-      ))}
+          {text}
+        </motion.span>
+      </div>
     </div>
   );
 }
