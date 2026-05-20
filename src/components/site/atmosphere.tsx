@@ -28,49 +28,51 @@ function makeRand(seed: number) {
   };
 }
 
-// `sizeBias` controls how tiny the stars are. Lower = smaller. Deep layers use
-// the smallest stars; closer layers are allowed a few slightly brighter pixels
-// but everything stays sub-pixel-feeling on a normal screen.
+// Every star is intentionally tiny — mostly 1px, with a rare 1.25px speck on
+// the nearest layer to give a hint of depth. Deeper layers stay dimmer so the
+// field reads as distant dust rather than a hero element.
 function seededStars(
   count: number,
   seed: number,
-  opts: { sizeBias?: "tiny" | "small" | "near" } = {}
+  opts: { sizeBias?: "far" | "mid" | "near" } = {}
 ): Star[] {
   const rand = makeRand(seed);
-  const bias = opts.sizeBias ?? "tiny";
+  const bias = opts.sizeBias ?? "far";
   return Array.from({ length: count }, () => {
     const sizePick = rand();
     let size: number;
-    if (bias === "tiny") {
-      size = sizePick < 0.9 ? 1 : 1.25;
-    } else if (bias === "small") {
-      size = sizePick < 0.78 ? 1 : sizePick < 0.97 ? 1.25 : 1.5;
+    if (bias === "far") {
+      size = 1;
+    } else if (bias === "mid") {
+      size = sizePick < 0.96 ? 1 : 1.25;
     } else {
-      size = sizePick < 0.6 ? 1 : sizePick < 0.92 ? 1.25 : sizePick < 0.99 ? 1.5 : 1.75;
+      size = sizePick < 0.88 ? 1 : 1.25;
     }
+    const opacityFloor =
+      bias === "far" ? 0.25 : bias === "mid" ? 0.35 : 0.5;
+    const opacityRange =
+      bias === "far" ? 0.25 : bias === "mid" ? 0.3 : 0.35;
     return {
       left: `${rand() * 100}%`,
       top: `${rand() * 100}%`,
       size,
       duration: 3.6 + rand() * 6.4,
       delay: rand() * 9,
-      baseOpacity: 0.4 + rand() * 0.35,
-      twinkleOpacity: 0.85 + rand() * 0.15,
+      baseOpacity: opacityFloor + rand() * opacityRange,
+      twinkleOpacity: 0.8 + rand() * 0.2,
     };
   });
 }
 
-// Layers stacked back-to-front. The first entry is the deepest layer (drawn
-// underneath everything else); the last entry is the closest to the viewer.
-// `depth` is the max pixel translation applied when the cursor reaches an
-// edge of the viewport. Per design intent, the deeper (lower) layers shift
-// more dramatically while the closer layers shift only a little — the
-// background sweeps while the foreground stars feel almost pinned.
+// Three layers of tiny stars stacked back-to-front. The first entry is the
+// deepest layer (drawn underneath); the last is closest to the viewer.
+// `depth` is the max pixel translation when the cursor hits a viewport edge —
+// deeper layers sweep more dramatically while the near layer barely budges,
+// which sells the parallax illusion.
 const LAYERS = [
-  { count: 220, seed: 808,  bias: "tiny"  as const, depth: 56, glow: false },
-  { count: 140, seed: 1337, bias: "tiny"  as const, depth: 28, glow: false },
-  { count: 80,  seed: 4242, bias: "small" as const, depth: 12, glow: false },
-  { count: 36,  seed: 9001, bias: "near"  as const, depth: 4,  glow: true  },
+  { count: 260, seed: 808,  bias: "far"  as const, depth: 64 },
+  { count: 160, seed: 1337, bias: "mid"  as const, depth: 32 },
+  { count: 90,  seed: 4242, bias: "near" as const, depth: 12 },
 ];
 
 export function Atmosphere() {
@@ -127,7 +129,7 @@ export function Atmosphere() {
           depth={layer.depth}
           reduce={!!reduce}
         >
-          <StarField stars={layer.stars} reduce={!!reduce} glow={layer.glow} />
+          <StarField stars={layer.stars} reduce={!!reduce} />
         </ParallaxLayer>
       ))}
     </div>
@@ -165,11 +167,9 @@ function ParallaxLayer({
 function StarField({
   stars,
   reduce,
-  glow,
 }: {
   stars: Star[];
   reduce: boolean;
-  glow: boolean;
 }) {
   return (
     <div className="absolute inset-0">
@@ -183,10 +183,6 @@ function StarField({
             width: `${s.size}px`,
             height: `${s.size}px`,
             opacity: s.baseOpacity,
-            boxShadow:
-              glow && s.size >= 1.25
-                ? `0 0 ${s.size * 2.5}px rgba(255,255,255,0.7)`
-                : undefined,
             animation: reduce
               ? undefined
               : `twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
