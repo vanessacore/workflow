@@ -9,7 +9,7 @@ export function Hero() {
   return (
     <section
       id="top"
-      className="relative isolate flex h-full min-h-[100svh] w-full items-center overflow-hidden px-6 pt-32 pb-24 md:min-h-0 md:px-12 md:pt-28 md:pb-24 lg:px-20"
+      className="relative isolate flex min-h-[100svh] w-full items-center overflow-hidden px-6 pt-32 pb-24 md:min-h-screen md:px-12 md:pt-28 md:pb-24 lg:px-20"
     >
       <div
         aria-hidden
