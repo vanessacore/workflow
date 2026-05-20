@@ -9,7 +9,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type Star = {
   left: string;
@@ -117,6 +117,7 @@ export function Atmosphere() {
       </ParallaxLayer>
 
       <SplineSphere />
+      <SphereParticleLabels reduce={!!reduce} />
 
       <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
@@ -171,6 +172,162 @@ function SplineSphere() {
         <Spline scene="https://prod.spline.design/x8loCVRSMhnir2Bk/scene.splinecode" />
       </div>
     </div>
+  );
+}
+
+// Picks 5 deterministic points on the visible dotted sphere body, draws a
+// highlighted "particle" anchor at each, a short leader line, and a label
+// outside the sphere. Hovering a label scales it up and triggers a continuous
+// wiggle so the annotation feels alive.
+function SphereParticleLabels({ reduce }: { reduce: boolean }) {
+  const items = useMemo(() => {
+    const rand = makeRand(7777);
+    return Array.from({ length: 5 }, (_, i) => {
+      // Evenly distribute base angles around the sphere, then jitter each
+      // by ~+/-20deg so the placement reads as "picked" rather than uniform.
+      const baseAngle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      const angle = baseAngle + (rand() - 0.5) * 0.7;
+      // 0.40-0.47 of the box puts the anchor on the visible dotted sphere
+      // body (the dotted ball occupies the central ~50% of --sphere-size).
+      const radius = 0.4 + rand() * 0.07;
+      return { angle, radius, text: `Work ${i + 1}` };
+    });
+  }, []);
+
+  return (
+    <div
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ width: "var(--sphere-size)", height: "var(--sphere-size)" }}
+    >
+      {items.map((p, i) => {
+        const cxPct = 50 + Math.cos(p.angle) * p.radius * 100;
+        const cyPct = 50 + Math.sin(p.angle) * p.radius * 100;
+        const outDx = Math.cos(p.angle);
+        const outDy = Math.sin(p.angle);
+        return (
+          <ParticleLabel
+            key={i}
+            cxPct={cxPct}
+            cyPct={cyPct}
+            outDx={outDx}
+            outDy={outDy}
+            text={p.text}
+            reduce={reduce}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ParticleLabel({
+  cxPct,
+  cyPct,
+  outDx,
+  outDy,
+  text,
+  reduce,
+}: {
+  cxPct: number;
+  cyPct: number;
+  outDx: number;
+  outDy: number;
+  text: string;
+  reduce: boolean;
+}) {
+  // Hover state is driven by the text span (small precise hit target) but the
+  // animation runs on the outer motion wrapper so the dot, leader line, and
+  // text all scale + wiggle together as a single annotation.
+  const [hovered, setHovered] = useState(false);
+
+  // Distance from the anchor particle dot to the start of the label, along
+  // the outward radial direction. The leader line spans this distance.
+  const leaderPx = 22;
+  const labelGapPx = 5;
+  const lineAngleRad = Math.atan2(outDy, outDx);
+  const labelOnRight = outDx >= 0;
+
+  const animate = hovered
+    ? reduce
+      ? { scale: 1.5, x: 0, y: 0, rotate: 0 }
+      : {
+          scale: 1.55,
+          x: [0, -1.8, 2.4, -1.2, 1.6, 0],
+          y: [0, 1.4, -2.0, 1.7, -1.1, 0],
+          rotate: [0, -1.6, 2.0, -1.0, 1.2, 0],
+        }
+    : { scale: 1, x: 0, y: 0, rotate: 0 };
+
+  const transition =
+    hovered && !reduce
+      ? {
+          scale: { duration: 0.22, ease: "easeOut" as const },
+          x: { duration: 1.1, repeat: Infinity, ease: "easeInOut" as const },
+          y: { duration: 1.35, repeat: Infinity, ease: "easeInOut" as const },
+          rotate: { duration: 1.05, repeat: Infinity, ease: "easeInOut" as const },
+        }
+      : { duration: 0.28, ease: "easeOut" as const };
+
+  return (
+    <motion.div
+      className="absolute"
+      style={{
+        left: `${cxPct}%`,
+        top: `${cyPct}%`,
+        // Scale + wiggle pivot on the anchor point so the dot stays glued to
+        // its particle while the rest of the annotation grows outward.
+        transformOrigin: "0% 50%",
+      }}
+      animate={animate}
+      transition={transition}
+    >
+      {/* Highlighted particle dot anchored on the sphere surface. */}
+      <span
+        aria-hidden
+        className="absolute block h-[4px] w-[4px] rounded-full bg-white"
+        style={{
+          left: 0,
+          top: 0,
+          transform: "translate(-50%, -50%)",
+          boxShadow:
+            "0 0 10px rgba(255,255,255,0.95), 0 0 22px rgba(180,200,255,0.7)",
+        }}
+      />
+      {/* Leader line from the particle outward toward the label. */}
+      <span
+        aria-hidden
+        className="absolute block h-px bg-white/40"
+        style={{
+          left: 0,
+          top: 0,
+          width: `${leaderPx}px`,
+          transformOrigin: "0% 50%",
+          transform: `rotate(${lineAngleRad}rad)`,
+        }}
+      />
+      {/* Position wrapper for the text. The label span is the hover trigger
+          via pointer-events:auto; the outer motion wrapper handles the actual
+          scale + wiggle for the whole assembly. */}
+      <div
+        className="absolute"
+        style={{
+          left: `${outDx * (leaderPx + labelGapPx)}px`,
+          top: `${outDy * (leaderPx + labelGapPx)}px`,
+          transform: labelOnRight
+            ? "translateY(-50%)"
+            : "translate(-100%, -50%)",
+        }}
+      >
+        <motion.span
+          className="pointer-events-auto inline-block cursor-pointer select-none whitespace-nowrap text-[10.5px] font-medium uppercase tracking-[0.22em] text-white/85"
+          style={{ textShadow: "0 0 10px rgba(0,0,0,0.75)" }}
+          onHoverStart={() => setHovered(true)}
+          onHoverEnd={() => setHovered(false)}
+        >
+          {text}
+        </motion.span>
+      </div>
+    </motion.div>
   );
 }
 
