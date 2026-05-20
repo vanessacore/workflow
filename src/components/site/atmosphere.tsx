@@ -2,13 +2,13 @@
 
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
-  useScroll,
   useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 type Star = {
   left: string;
@@ -28,9 +28,9 @@ function makeRand(seed: number) {
   };
 }
 
-// `sizeBias` controls how tiny the stars are. Lower = smaller. Far layers use
-// the smallest stars; the closer foreground layer is allowed a few slightly
-// brighter pixels but everything stays sub-pixel-feeling on a normal screen.
+// `sizeBias` controls how tiny the stars are. Lower = smaller. Deep layers use
+// the smallest stars; closer layers are allowed a few slightly brighter pixels
+// but everything stays sub-pixel-feeling on a normal screen.
 function seededStars(
   count: number,
   seed: number,
@@ -60,75 +60,102 @@ function seededStars(
   });
 }
 
+// Layers stacked back-to-front. The first entry is the deepest (least mouse
+// response); the last entry is the closest to the viewer (most response).
+// `depth` is the max pixel translation applied when the cursor reaches an
+// edge of the viewport. Foreground layers shift far more than background
+// layers to read as depth.
+const LAYERS = [
+  { count: 220, seed: 808,  bias: "tiny"  as const, depth: 4,  glow: false },
+  { count: 140, seed: 1337, bias: "tiny"  as const, depth: 10, glow: false },
+  { count: 80,  seed: 4242, bias: "small" as const, depth: 22, glow: false },
+  { count: 36,  seed: 9001, bias: "near"  as const, depth: 48, glow: true  },
+];
+
 export function Atmosphere() {
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll();
-  // Heavier spring smoothing so the scroll-driven parallax responds slowly.
-  const smooth = useSpring(scrollYProgress, {
-    stiffness: 55,
-    damping: 28,
-    mass: 0.6,
-  });
 
-  // Three independent star fields so layered parallax reads as depth.
-  const farStars = useMemo(() => seededStars(160, 1337, { sizeBias: "tiny" }), []);
-  const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
-  const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
+  // Raw cursor position, normalized to [-1, 1] across the viewport.
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
 
-  // Per-layer parallax: far moves the least, near the most. Vertical drift is
-  // larger than horizontal so scrolling reads as descent through the field.
-  const farY = useTransform(smooth, [0, 1], ["0%", "-4%"]);
-  const farX = useTransform(smooth, [0, 1], ["0%", "1.5%"]);
-  const midY = useTransform(smooth, [0, 1], ["0%", "-9%"]);
-  const midX = useTransform(smooth, [0, 1], ["0%", "3%"]);
-  const nearY = useTransform(smooth, [0, 1], ["0%", "-16%"]);
-  const nearX = useTransform(smooth, [0, 1], ["0%", "5%"]);
+  // Spring-smoothed so the field glides rather than snaps with each pointer
+  // sample. Lower stiffness / higher damping = slower, calmer drift.
+  const smx = useSpring(mx, { stiffness: 50, damping: 18, mass: 0.5 });
+  const smy = useSpring(my, { stiffness: 50, damping: 18, mass: 0.5 });
+
+  useEffect(() => {
+    if (reduce) return;
+    const onMove = (e: PointerEvent) => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      mx.set((e.clientX / w) * 2 - 1);
+      my.set((e.clientY / h) * 2 - 1);
+    };
+    const onLeave = () => {
+      mx.set(0);
+      my.set(0);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
+    };
+  }, [mx, my, reduce]);
+
+  const layers = useMemo(
+    () =>
+      LAYERS.map((l) => ({
+        ...l,
+        stars: seededStars(l.count, l.seed, { sizeBias: l.bias }),
+      })),
+    []
+  );
 
   return (
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
-      <ParallaxLayer x={farX} y={farY} reduce={!!reduce}>
-        <StarField stars={farStars} reduce={!!reduce} glow={false} />
-      </ParallaxLayer>
-      <ParallaxLayer x={midX} y={midY} reduce={!!reduce}>
-        <StarField stars={midStars} reduce={!!reduce} glow={false} />
-      </ParallaxLayer>
-      <ParallaxLayer x={nearX} y={nearY} reduce={!!reduce}>
-        <StarField stars={nearStars} reduce={!!reduce} glow />
-      </ParallaxLayer>
-
-      <SplineSphere />
-      <SphereParticleLabels reduce={!!reduce} />
-
-      <div className="absolute inset-0 grain opacity-[0.3] mix-blend-overlay" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.45)_85%,#000)]" />
-      <div className="absolute inset-x-0 top-0 h-px hairline" />
+      {layers.map((layer, i) => (
+        <ParallaxLayer
+          key={i}
+          mx={smx}
+          my={smy}
+          depth={layer.depth}
+          reduce={!!reduce}
+        >
+          <StarField stars={layer.stars} reduce={!!reduce} glow={layer.glow} />
+        </ParallaxLayer>
+      ))}
     </div>
   );
 }
 
 function ParallaxLayer({
   children,
-  x,
-  y,
-  scale,
-  opacity,
+  mx,
+  my,
+  depth,
   reduce,
 }: {
   children: React.ReactNode;
-  x?: MotionValue<string>;
-  y?: MotionValue<string>;
-  scale?: MotionValue<number>;
-  opacity?: MotionValue<number>;
+  mx: MotionValue<number>;
+  my: MotionValue<number>;
+  depth: number;
   reduce: boolean;
 }) {
-  const style = reduce
-    ? undefined
-    : ({ x, y, scale, opacity } as Record<string, MotionValue<string | number> | undefined>);
+  // Negated translation: stars shift opposite to the cursor so it reads as
+  // "looking around" through a 3D field rather than the cursor dragging the
+  // stars with it.
+  const x = useTransform(mx, (v) => `${-v * depth}px`);
+  const y = useTransform(my, (v) => `${-v * depth}px`);
   return (
-    <motion.div style={style} className="absolute inset-0 will-change-transform">
+    <motion.div
+      style={reduce ? undefined : { x, y }}
+      className="absolute inset-0 will-change-transform"
+    >
       {children}
     </motion.div>
   );
