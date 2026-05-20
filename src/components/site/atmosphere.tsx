@@ -1,6 +1,5 @@
 "use client";
 
-import Spline from "@splinetool/react-spline";
 import {
   motion,
   useReducedMotion,
@@ -55,9 +54,6 @@ function seededStars(
       size,
       duration: 3.6 + rand() * 6.4,
       delay: rand() * 9,
-      // Stars sit alongside the bright 95% dotted sphere, so they need
-      // to read clearly against the dark background rather than being
-      // a barely-visible texture.
       baseOpacity: 0.4 + rand() * 0.35,
       twinkleOpacity: 0.85 + rand() * 0.15,
     };
@@ -74,8 +70,7 @@ export function Atmosphere() {
     mass: 0.6,
   });
 
-  // Three independent star fields so layered parallax reads as depth rather
-  // than a single field sliding behind the sphere.
+  // Three independent star fields so layered parallax reads as depth.
   const farStars = useMemo(() => seededStars(160, 1337, { sizeBias: "tiny" }), []);
   const midStars = useMemo(() => seededStars(90, 4242, { sizeBias: "small" }), []);
   const nearStars = useMemo(() => seededStars(44, 9001, { sizeBias: "near" }), []);
@@ -93,19 +88,7 @@ export function Atmosphere() {
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-      style={{
-        // Shared base used to size both the gradient sphere and the Spline
-        // canvas. Capped at the original 42rem on large displays, and scaled
-        // down with vmin on smaller viewports so the sphere never overflows
-        // the screen. Both layers derive from this single value so the
-        // Spline mesh stays aligned with the gradient sphere body at every
-        // screen size.
-        ["--sphere-size" as string]: "min(42rem, 85vmin)",
-      }}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.04),_transparent_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(40,30,100,0.14),_transparent_55%)]" />
-
       <ParallaxLayer x={farX} y={farY} reduce={!!reduce}>
         <StarField stars={farStars} reduce={!!reduce} glow={false} />
       </ParallaxLayer>
