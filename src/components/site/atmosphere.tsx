@@ -60,16 +60,17 @@ function seededStars(
   });
 }
 
-// Layers stacked back-to-front. The first entry is the deepest (least mouse
-// response); the last entry is the closest to the viewer (most response).
+// Layers stacked back-to-front. The first entry is the deepest layer (drawn
+// underneath everything else); the last entry is the closest to the viewer.
 // `depth` is the max pixel translation applied when the cursor reaches an
-// edge of the viewport. Foreground layers shift far more than background
-// layers to read as depth.
+// edge of the viewport. Per design intent, the deeper (lower) layers shift
+// more dramatically while the closer layers shift only a little — the
+// background sweeps while the foreground stars feel almost pinned.
 const LAYERS = [
-  { count: 220, seed: 808,  bias: "tiny"  as const, depth: 4,  glow: false },
-  { count: 140, seed: 1337, bias: "tiny"  as const, depth: 10, glow: false },
-  { count: 80,  seed: 4242, bias: "small" as const, depth: 22, glow: false },
-  { count: 36,  seed: 9001, bias: "near"  as const, depth: 48, glow: true  },
+  { count: 220, seed: 808,  bias: "tiny"  as const, depth: 56, glow: false },
+  { count: 140, seed: 1337, bias: "tiny"  as const, depth: 28, glow: false },
+  { count: 80,  seed: 4242, bias: "small" as const, depth: 12, glow: false },
+  { count: 36,  seed: 9001, bias: "near"  as const, depth: 4,  glow: true  },
 ];
 
 export function Atmosphere() {
