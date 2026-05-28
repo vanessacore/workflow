@@ -611,11 +611,14 @@ type StarLayerConfig = {
   seed: number;
 };
 
+// Tuned so the layer-to-layer deltas are visible at a glance. The closest
+// layer travels ~60vw across the full deck (≈12vw between adjacent slides)
+// and arcs ~10vh through the midpoint; the farthest barely budges.
 const STAR_LAYERS: StarLayerConfig[] = [
-  { count: 16, travelVw: 38, arcAmpVh: 5.5, sizePx: 2.6, baseOpacity: 0.95, glowPx: 3.2, twinkleSec: [3.2, 5.2], seed: 0x9e3779 },
-  { count: 34, travelVw: 22, arcAmpVh: 3.6, sizePx: 1.8, baseOpacity: 0.8, glowPx: 1.6, twinkleSec: [4.5, 7.5], seed: 0x517cc1 },
-  { count: 64, travelVw: 12, arcAmpVh: 2.2, sizePx: 1.25, baseOpacity: 0.65, glowPx: 0.6, twinkleSec: [6, 10], seed: 0xb5297a },
-  { count: 110, travelVw: 5, arcAmpVh: 1.0, sizePx: 0.85, baseOpacity: 0.5, glowPx: 0, twinkleSec: [8, 14], seed: 0x0a3d62 },
+  { count: 22, travelVw: 60, arcAmpVh: 10, sizePx: 3.2, baseOpacity: 1.0, glowPx: 4, twinkleSec: [2.6, 4.4], seed: 0x9e3779 },
+  { count: 44, travelVw: 32, arcAmpVh: 5.5, sizePx: 2.1, baseOpacity: 0.9, glowPx: 2, twinkleSec: [3.8, 6.2], seed: 0x517cc1 },
+  { count: 80, travelVw: 14, arcAmpVh: 2.8, sizePx: 1.35, baseOpacity: 0.7, glowPx: 0.7, twinkleSec: [5, 9], seed: 0xb5297a },
+  { count: 140, travelVw: 4, arcAmpVh: 0.8, sizePx: 0.85, baseOpacity: 0.55, glowPx: 0, twinkleSec: [7, 13], seed: 0x0a3d62 },
 ];
 
 type Star = {
@@ -642,10 +645,14 @@ function mulberry32(seed: number) {
 function generateStars(layer: StarLayerConfig): Star[] {
   const rand = mulberry32(layer.seed);
   const [tMin, tMax] = layer.twinkleSec;
+  // xPct spans 0..100 of a 200vw-wide layer centered on the viewport, so
+  // stars exist across the full -50vw..+150vw band. That keeps the visible
+  // 0..100vw window populated as the layer translates horizontally without
+  // leaving an obvious empty edge.
   return Array.from({ length: layer.count }, () => ({
     xPct: rand() * 100,
     yPct: rand() * 100,
-    opacity: layer.baseOpacity * (0.6 + rand() * 0.4),
+    opacity: layer.baseOpacity * (0.55 + rand() * 0.45),
     delay: -rand() * tMax,
     duration: tMin + rand() * (tMax - tMin),
   }));
@@ -697,8 +704,12 @@ function StarLayer({
 
   return (
     <motion.div
-      className="absolute inset-0 will-change-transform"
-      style={{ x, y }}
+      // 200vw-wide layer centered on the viewport (-50vw .. +150vw). The
+      // layer translates by at most ~60vw in either direction, so the
+      // visible 0..100vw window is always covered by stars instead of
+      // showing an empty band on the side the layer is sliding away from.
+      className="absolute inset-y-0 will-change-transform"
+      style={{ x, y, left: "-50vw", right: "-50vw" }}
     >
       {stars.map((s, i) => (
         <span
@@ -718,8 +729,8 @@ function StarLayer({
               ? undefined
               : `twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
             // Custom-property bounds the existing `twinkle` keyframe reads.
-            ["--star-min" as string]: `${(s.opacity * 0.35).toFixed(3)}`,
-            ["--star-max" as string]: `${Math.min(1, s.opacity * 1.15).toFixed(3)}`,
+            ["--star-min" as string]: `${(s.opacity * 0.25).toFixed(3)}`,
+            ["--star-max" as string]: `${Math.min(1, s.opacity * 1.25).toFixed(3)}`,
           }}
         />
       ))}
