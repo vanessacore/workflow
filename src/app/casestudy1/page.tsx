@@ -498,7 +498,7 @@ function SlideIndicators({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-2">
+    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-0">
       {Array.from({ length: count }).map((_, i) => (
         <Indicator
           key={i}
@@ -537,7 +537,7 @@ function Indicator({
       type="button"
       aria-label={`Go to slide ${index + 1}`}
       onClick={() => onSelect(index)}
-      className="group inline-flex items-center justify-center px-1.5 py-3 cursor-pointer"
+      className="group inline-flex items-center justify-center px-0.5 py-3 cursor-pointer"
     >
       <motion.span
         aria-hidden
