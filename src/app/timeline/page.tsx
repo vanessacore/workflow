@@ -64,31 +64,29 @@ export default function TimelinePage() {
         >
           <Link
             href="/"
-            className="
-              group inline-flex items-center gap-2
-              rounded-full border border-white/10 bg-white/[0.04]
-              px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em] text-foreground/70
-              backdrop-blur-md transition-all
-              hover:border-white/20 hover:bg-white/[0.08] hover:text-foreground
-            "
+            className="liquid-glass liquid-glass-edge group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em] text-foreground/80 transition-[transform,color] duration-300 hover:text-foreground active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 14 14"
-              fill="none"
-              aria-hidden
-              className="transition-transform duration-300 group-hover:-translate-x-0.5"
-            >
-              <path
-                d="M11 7H3m0 0l3.5-3.5M3 7l3.5 3.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Back
+            <span aria-hidden className="liquid-glass-sheen" />
+            <span aria-hidden className="liquid-glass-noise" />
+            <span className="relative inline-flex items-center gap-2">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 14 14"
+                fill="none"
+                aria-hidden
+                className="transition-transform duration-300 group-hover:-translate-x-0.5"
+              >
+                <path
+                  d="M11 7H3m0 0l3.5-3.5M3 7l3.5 3.5"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Back
+            </span>
           </Link>
         </motion.div>
 
