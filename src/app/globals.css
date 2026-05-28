@@ -225,26 +225,30 @@
     display: none;
   }
 
-  /* Liquid-glass backdrop. Firefox-safe fallback first; Chromium/Safari
-     upgrade to the SVG displacement filter for real edge refraction. */
+}
+
+/* Liquid-glass backdrop. Lives outside @layer utilities so Lightning CSS
+   doesn't dedupe -webkit-backdrop-filter against backdrop-filter — when
+   both were inside the layer, only the prefixed version was emitted.
+   -webkit- variant declared FIRST so that the unprefixed (modern,
+   correct) declaration wins on browsers that support both. */
+.glass-surface {
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  backdrop-filter: blur(36px) saturate(180%);
+}
+@supports (backdrop-filter: url(#liquid-glass)) or
+  (-webkit-backdrop-filter: url(#liquid-glass)) {
   .glass-surface {
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    /* Blur the backdrop first, then warp the blurred result. Reversing
+       the order would let the post-displacement blur smear the warping
+       away entirely. */
+    -webkit-backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
+    backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
   }
-  @supports (backdrop-filter: url(#liquid-glass)) or
-    (-webkit-backdrop-filter: url(#liquid-glass)) {
-    .glass-surface {
-      /* Blur the backdrop first, then warp the blurred result. Reversing
-         the order would let the post-displacement blur smear the warping
-         away entirely. */
-      backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
-      -webkit-backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
-    }
-    .glass-surface[data-pressed="true"] {
-      backdrop-filter: blur(26px) saturate(190%) url(#liquid-glass-active);
-      -webkit-backdrop-filter: blur(26px) saturate(190%)
-        url(#liquid-glass-active);
-    }
+  .glass-surface[data-pressed="true"] {
+    -webkit-backdrop-filter: blur(26px) saturate(190%)
+      url(#liquid-glass-active);
+    backdrop-filter: blur(26px) saturate(190%) url(#liquid-glass-active);
   }
 }
 
