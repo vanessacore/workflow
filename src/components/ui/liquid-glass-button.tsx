@@ -63,7 +63,7 @@ export function LiquidGlassButton({
   // radial-gradient overlay below).
   const px = useMotionValue(50);
   const py = useMotionValue(50);
-  const highlight = useMotionTemplate`radial-gradient(120px circle at ${px}% ${py}%, rgba(255,255,255,0.35), transparent 60%)`;
+  const highlight = useMotionTemplate`radial-gradient(120px circle at ${px}% ${py}%, rgba(255,255,255,0.14), transparent 60%)`;
 
   const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
     onPointerMove?.(e);
