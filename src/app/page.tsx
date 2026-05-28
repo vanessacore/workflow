@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Spline from "@splinetool/react-spline";
+import { Snapshot } from "@/components/site/snapshot";
 
 const SCENES = {
   sm: "https://prod.spline.design/zWAjf7IWbf-raUMt/scene.splinecode",
@@ -38,14 +39,17 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-10 overflow-hidden">
-      {bucket && (
-        <Spline
-          key={bucket}
-          scene={SCENES[bucket]}
-          style={{ width: "100%", height: "100%" }}
-        />
-      )}
-    </div>
+    <>
+      <div className="fixed inset-0 z-10 overflow-hidden">
+        {bucket && (
+          <Spline
+            key={bucket}
+            scene={SCENES[bucket]}
+            style={{ width: "100%", height: "100%" }}
+          />
+        )}
+      </div>
+      <Snapshot />
+    </>
   );
 }
