@@ -228,8 +228,8 @@
   /* Liquid-glass backdrop. Firefox-safe fallback first; Chromium/Safari
      upgrade to the SVG displacement filter for real edge refraction. */
   .glass-surface {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
   }
   @supports (backdrop-filter: url(#liquid-glass)) or
     (-webkit-backdrop-filter: url(#liquid-glass)) {
@@ -237,12 +237,12 @@
       /* Blur the backdrop first, then warp the blurred result. Reversing
          the order would let the post-displacement blur smear the warping
          away entirely. */
-      backdrop-filter: blur(18px) saturate(180%) url(#liquid-glass);
-      -webkit-backdrop-filter: blur(18px) saturate(180%) url(#liquid-glass);
+      backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
+      -webkit-backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
     }
     .glass-surface[data-pressed="true"] {
-      backdrop-filter: blur(14px) saturate(190%) url(#liquid-glass-active);
-      -webkit-backdrop-filter: blur(14px) saturate(190%)
+      backdrop-filter: blur(26px) saturate(190%) url(#liquid-glass-active);
+      -webkit-backdrop-filter: blur(26px) saturate(190%)
         url(#liquid-glass-active);
     }
   }
