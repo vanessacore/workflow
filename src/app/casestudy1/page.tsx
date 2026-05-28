@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   motion,
+  useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useSpring,
@@ -115,6 +116,11 @@ const TOUCH_THRESHOLD = 40;
 export default function CaseStudy1Page() {
   const reduce = useReducedMotion();
   const trackRef = useRef<HTMLDivElement>(null);
+  // The pagination indicators animate against this discrete index rather
+  // than the raw scroll spring, so each dot has its own spring-driven
+  // width/opacity transition that stays visible even when the user jumps
+  // many slides at once (e.g. Home/End keys).
+  const [activeIndex, setActiveIndex] = useState(0);
 
   // We map the page's vertical scroll across the full height of the track
   // into a horizontal translation of the slide row. Each slide occupies one
@@ -135,6 +141,12 @@ export default function CaseStudy1Page() {
     [0, 1],
     ["0vw", `-${(slides.length - 1) * 100}vw`],
   );
+
+  useMotionValueEvent(smooth, "change", (v) => {
+    const N = slides.length;
+    const idx = Math.max(0, Math.min(N - 1, Math.round(v * (N - 1))));
+    setActiveIndex((prev) => (prev === idx ? prev : idx));
+  });
 
   // Page-snap controller. We hijack wheel/keyboard/touch on desktop and
   // animate window.scrollTo to one of N discrete scroll positions — one per
@@ -299,7 +311,7 @@ export default function CaseStudy1Page() {
 
           <SlideIndicators
             count={slides.length}
-            progress={smooth}
+            activeIndex={activeIndex}
             onSelect={scrollToIndex}
           />
         </div>
@@ -490,11 +502,11 @@ function TopBar({
 
 function SlideIndicators({
   count,
-  progress,
+  activeIndex,
   onSelect,
 }: {
   count: number;
-  progress: ReturnType<typeof useSpring>;
+  activeIndex: number;
   onSelect: (index: number) => void;
 }) {
   return (
@@ -503,8 +515,7 @@ function SlideIndicators({
         <Indicator
           key={i}
           index={i}
-          count={count}
-          progress={progress}
+          isActive={i === activeIndex}
           onSelect={onSelect}
         />
       ))}
@@ -512,38 +523,40 @@ function SlideIndicators({
   );
 }
 
+// Inactive dots are 8px circles; the active dot scales to a 32px pill via
+// its own spring. The flex container's gap-4 keeps a constant 16px between
+// dots, and because each dot animates its width independently the row
+// reflows its x-positions smoothly as widths change.
+const DOT_INACTIVE_WIDTH = 8;
+const DOT_ACTIVE_WIDTH = 32;
+const DOT_SPRING = { type: "spring", stiffness: 360, damping: 32, mass: 0.9 } as const;
+
 function Indicator({
   index,
-  count,
-  progress,
+  isActive,
   onSelect,
 }: {
   index: number;
-  count: number;
-  progress: ReturnType<typeof useSpring>;
+  isActive: boolean;
   onSelect: (index: number) => void;
 }) {
-  // Inactive indicators are 8px circles; the active one scales up to a 32px
-  // pill. Width and opacity interpolate linearly between adjacent slide
-  // centers so neighbours grow as the active one shrinks, and the row's
-  // x-positions reflow smoothly via flex layout while preserving the 16px
-  // gap between dots.
-  const center = index / (count - 1);
-  const prev = (index - 1) / (count - 1);
-  const next = (index + 1) / (count - 1);
-  const width = useTransform(progress, [prev, center, next], [8, 32, 8]);
-  const opacity = useTransform(progress, [prev, center, next], [0.4, 1, 0.4]);
   return (
     <button
       type="button"
       aria-label={`Go to slide ${index + 1}`}
+      aria-current={isActive ? "true" : undefined}
       onClick={() => onSelect(index)}
       className="group inline-flex items-center justify-center py-3 cursor-pointer"
     >
       <motion.span
         aria-hidden
-        style={{ opacity, width }}
-        className="block h-2 rounded-full bg-white transition-opacity group-hover:opacity-100"
+        initial={false}
+        animate={{
+          width: isActive ? DOT_ACTIVE_WIDTH : DOT_INACTIVE_WIDTH,
+          opacity: isActive ? 1 : 0.4,
+        }}
+        transition={DOT_SPRING}
+        className="block h-2 rounded-full bg-white group-hover:opacity-100"
       />
     </button>
   );
