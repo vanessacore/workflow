@@ -498,7 +498,7 @@ function SlideIndicators({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-0">
+    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-4">
       {Array.from({ length: count }).map((_, i) => (
         <Indicator
           key={i}
@@ -523,22 +523,22 @@ function Indicator({
   progress: ReturnType<typeof useSpring>;
   onSelect: (index: number) => void;
 }) {
-  // Each dot lights up when the scroll progress is within its slice. Inactive
-  // indicators are tight circles; the active one expands into a wider pill.
-  const start = (index - 0.5) / (count - 1);
-  const end = (index + 0.5) / (count - 1);
-  const opacity = useTransform(progress, (v) =>
-    v >= start && v <= end ? 1 : 0.4,
-  );
-  const width = useTransform(progress, (v) =>
-    v >= start && v <= end ? 32 : 8,
-  );
+  // Inactive indicators are 8px circles; the active one scales up to a 32px
+  // pill. Width and opacity interpolate linearly between adjacent slide
+  // centers so neighbours grow as the active one shrinks, and the row's
+  // x-positions reflow smoothly via flex layout while preserving the 16px
+  // gap between dots.
+  const center = index / (count - 1);
+  const prev = (index - 1) / (count - 1);
+  const next = (index + 1) / (count - 1);
+  const width = useTransform(progress, [prev, center, next], [8, 32, 8]);
+  const opacity = useTransform(progress, [prev, center, next], [0.4, 1, 0.4]);
   return (
     <button
       type="button"
       aria-label={`Go to slide ${index + 1}`}
       onClick={() => onSelect(index)}
-      className="group inline-flex items-center justify-center px-1.5 py-3 cursor-pointer"
+      className="group inline-flex items-center justify-center py-3 cursor-pointer"
     >
       <motion.span
         aria-hidden
