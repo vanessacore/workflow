@@ -19,6 +19,8 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        glass:
+          "glass-surface relative isolate overflow-hidden text-white border-white/15 bg-white/5 hover:bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.35),0_10px_40px_-10px_rgba(0,0,0,0.55),0_1px_0_rgba(255,255,255,0.06)] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:bg-gradient-to-b before:from-white/25 before:via-white/0 before:to-white/10 before:opacity-90 before:[mask-image:linear-gradient(180deg,black,transparent_55%,black)] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.55)_50%,transparent_70%)] after:bg-[length:220%_100%] after:bg-[position:120%_0] after:opacity-0 after:transition-[background-position,opacity] after:duration-700 after:ease-out hover:after:opacity-100 hover:after:bg-[position:-20%_0]",
       },
       size: {
         default:
