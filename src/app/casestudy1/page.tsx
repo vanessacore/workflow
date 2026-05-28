@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
+  type MotionValue,
   useMotionValueEvent,
   useReducedMotion,
   useScroll,
@@ -309,6 +310,12 @@ export default function CaseStudy1Page() {
             ))}
           </motion.div>
 
+          {/* Parallax starfield rides on top of the slides with screen blend so
+              bright pixels (stars) shine over dark slide backgrounds without
+              muddying the text. Layers translate at different magnitudes and
+              arc along a sin curve to mimic motion across a sphere's surface. */}
+          <StarField progress={smooth} />
+
           <SlideIndicators
             count={slides.length}
             activeIndex={activeIndex}
@@ -584,6 +591,150 @@ function CornerMarks() {
         </svg>
       ))}
     </div>
+  );
+}
+
+// Parallax starfield. Four depth layers traverse different horizontal
+// distances (closer = more) and arc along a sin curve (closer = larger arc)
+// so the cumulative path length resembles a slice of motion along a sphere
+// rather than a flat translate. Star positions are seeded so SSR and client
+// produce identical markup; per-star twinkle is driven by a CSS keyframe so
+// it costs nothing on the scroll path.
+type StarLayerConfig = {
+  count: number;
+  travelVw: number;
+  arcAmpVh: number;
+  sizePx: number;
+  baseOpacity: number;
+  glowPx: number;
+  twinkleSec: [number, number];
+  seed: number;
+};
+
+// Tuned so the layer-to-layer deltas are visible at a glance. The closest
+// layer travels ~60vw across the full deck (≈12vw between adjacent slides)
+// and arcs ~10vh through the midpoint; the farthest barely budges.
+const STAR_LAYERS: StarLayerConfig[] = [
+  { count: 22, travelVw: 60, arcAmpVh: 10, sizePx: 3.2, baseOpacity: 1.0, glowPx: 4, twinkleSec: [2.6, 4.4], seed: 0x9e3779 },
+  { count: 44, travelVw: 32, arcAmpVh: 5.5, sizePx: 2.1, baseOpacity: 0.9, glowPx: 2, twinkleSec: [3.8, 6.2], seed: 0x517cc1 },
+  { count: 80, travelVw: 14, arcAmpVh: 2.8, sizePx: 1.35, baseOpacity: 0.7, glowPx: 0.7, twinkleSec: [5, 9], seed: 0xb5297a },
+  { count: 140, travelVw: 4, arcAmpVh: 0.8, sizePx: 0.85, baseOpacity: 0.55, glowPx: 0, twinkleSec: [7, 13], seed: 0x0a3d62 },
+];
+
+type Star = {
+  xPct: number;
+  yPct: number;
+  opacity: number;
+  delay: number;
+  duration: number;
+};
+
+// Deterministic 32-bit hash → [0,1). Used so star positions are identical on
+// server and client (no hydration mismatch) and stable across renders.
+function mulberry32(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateStars(layer: StarLayerConfig): Star[] {
+  const rand = mulberry32(layer.seed);
+  const [tMin, tMax] = layer.twinkleSec;
+  // xPct spans 0..100 of a 200vw-wide layer centered on the viewport, so
+  // stars exist across the full -50vw..+150vw band. That keeps the visible
+  // 0..100vw window populated as the layer translates horizontally without
+  // leaving an obvious empty edge.
+  return Array.from({ length: layer.count }, () => ({
+    xPct: rand() * 100,
+    yPct: rand() * 100,
+    opacity: layer.baseOpacity * (0.55 + rand() * 0.45),
+    delay: -rand() * tMax,
+    duration: tMin + rand() * (tMax - tMin),
+  }));
+}
+
+function StarField({ progress }: { progress: MotionValue<number> }) {
+  const reduce = useReducedMotion();
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{ mixBlendMode: "screen" }}
+    >
+      {STAR_LAYERS.map((layer, i) => (
+        <StarLayer
+          key={i}
+          layer={layer}
+          progress={progress}
+          reduce={!!reduce}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StarLayer({
+  layer,
+  progress,
+  reduce,
+}: {
+  layer: StarLayerConfig;
+  progress: MotionValue<number>;
+  reduce: boolean;
+}) {
+  const stars = useMemo(() => generateStars(layer), [layer]);
+
+  // Camera pans right through the scene, so stars drift left. Each layer's
+  // travel is its own depth-scaled fraction of total progress.
+  const x = useTransform(
+    progress,
+    [0, 1],
+    reduce ? ["0vw", "0vw"] : ["0vw", `-${layer.travelVw}vw`],
+  );
+  // Sphere-style arc: y peaks (negative = up) at the midpoint of the scroll
+  // range and returns to 0 at both ends. Closer layers arc more.
+  const y = useTransform(progress, (p) =>
+    reduce ? "0vh" : `${-Math.sin(p * Math.PI) * layer.arcAmpVh}vh`,
+  );
+
+  return (
+    <motion.div
+      // 200vw-wide layer centered on the viewport (-50vw .. +150vw). The
+      // layer translates by at most ~60vw in either direction, so the
+      // visible 0..100vw window is always covered by stars instead of
+      // showing an empty band on the side the layer is sliding away from.
+      className="absolute inset-y-0 will-change-transform"
+      style={{ x, y, left: "-50vw", right: "-50vw" }}
+    >
+      {stars.map((s, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full bg-white"
+          style={{
+            left: `${s.xPct}%`,
+            top: `${s.yPct}%`,
+            width: `${layer.sizePx}px`,
+            height: `${layer.sizePx}px`,
+            opacity: s.opacity,
+            boxShadow:
+              layer.glowPx > 0
+                ? `0 0 ${layer.glowPx}px rgba(255,255,255,0.9)`
+                : undefined,
+            animation: reduce
+              ? undefined
+              : `twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
+            // Custom-property bounds the existing `twinkle` keyframe reads.
+            ["--star-min" as string]: `${(s.opacity * 0.25).toFixed(3)}`,
+            ["--star-max" as string]: `${Math.min(1, s.opacity * 1.25).toFixed(3)}`,
+          }}
+        />
+      ))}
+    </motion.div>
   );
 }
 
