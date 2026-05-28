@@ -254,101 +254,60 @@
 
 /* ─────────────────────────────────────────────────────────────────────────
    Liquid Glass material
-   Inspired by Apple's Liquid Glass: heavy backdrop blur + saturation,
-   layered specular highlights, a bright top edge and a soft cool shadow.
-   The element itself only provides the base material; bright edge/sheen
-   highlights and refracted noise are layered via `.liquid-glass-edge`,
-   `.liquid-glass-sheen`, and `.liquid-glass-noise` pseudo-helpers placed
-   inside the element.
+   Apple-style Liquid Glass: heavy backdrop blur + saturation, a gradient
+   "meniscus" border that's bright along the top edge, layered radial
+   highlights, a faint noise texture, and a soft cool drop shadow that
+   suggests light passing through glass.
    ───────────────────────────────────────────────────────────────────── */
 .liquid-glass {
   position: relative;
-  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.025)) padding-box,
+    linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.08) 30%,
+      rgba(255, 255, 255, 0.04) 55%,
+      rgba(255, 255, 255, 0.22) 100%
+    ) border-box;
   -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
   backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
   box-shadow:
-    /* outer soft cool shadow — light passing through glass */
     0 24px 60px -20px rgba(20, 24, 60, 0.55),
     0 8px 24px -10px rgba(0, 0, 0, 0.45),
-    /* outer hairline */
-    0 0 0 0.5px rgba(255, 255, 255, 0.12),
-    /* inner top sheen */
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    /* inner bottom shadow gives sense of glass thickness */
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -10px 30px -10px rgba(0, 0, 0, 0.35);
+    inset 0 -16px 32px -16px rgba(0, 0, 0, 0.35);
 }
 
-/* Bright top arc + dim bottom — simulates a curved meniscus catching light */
-.liquid-glass-edge::before,
-.liquid-glass-edge::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  padding: 1px;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-}
-.liquid-glass-edge::before {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.08) 35%,
-    rgba(255, 255, 255, 0) 70%
-  );
-}
-.liquid-glass-edge::after {
-  background: linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0) 45%
-  );
-  opacity: 0.7;
-}
-
-/* Diagonal specular highlight that drifts on hover */
+/* Layered specular highlights that drift on hover */
 .liquid-glass-sheen {
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
   background:
-    radial-gradient(
-      120% 80% at 0% 0%,
-      rgba(255, 255, 255, 0.18) 0%,
-      rgba(255, 255, 255, 0) 45%
-    ),
-    radial-gradient(
-      100% 60% at 100% 0%,
-      rgba(180, 200, 255, 0.10) 0%,
-      rgba(180, 200, 255, 0) 55%
-    ),
-    radial-gradient(
-      80% 60% at 50% 110%,
-      rgba(160, 130, 255, 0.10) 0%,
-      rgba(160, 130, 255, 0) 60%
-    );
+    radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 45%),
+    radial-gradient(100% 60% at 100% 0%, rgba(180, 200, 255, 0.14) 0%, rgba(180, 200, 255, 0) 55%),
+    radial-gradient(80% 60% at 50% 110%, rgba(160, 130, 255, 0.12) 0%, rgba(160, 130, 255, 0) 60%);
   mix-blend-mode: screen;
-  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .liquid-glass:hover .liquid-glass-sheen {
   transform: translate3d(2%, 1%, 0) scale(1.03);
 }
 
-/* Subtle high-frequency noise — sells the wet, liquid texture */
+/* Faint high-frequency noise — sells the wet, liquid texture */
 .liquid-glass-noise {
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  opacity: 0.22;
+  opacity: 0.18;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   background-size: 160px 160px;
 }

@@ -55,7 +55,7 @@ export function Snapshot() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.1, ease, delay: 0.4 }}
         aria-label="A quick snapshot of Vanessa"
-        className="liquid-glass liquid-glass-edge pointer-events-auto relative w-full max-w-5xl overflow-hidden rounded-[28px]"
+        className="liquid-glass pointer-events-auto relative w-full max-w-5xl overflow-hidden rounded-[28px]"
       >
         <span aria-hidden className="liquid-glass-sheen" />
         <span aria-hidden className="liquid-glass-noise" />
@@ -123,7 +123,7 @@ export function LiquidGlassLink({
     <Link
       href={href}
       className={
-        "liquid-glass liquid-glass-edge group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-4 py-2.5 text-[12.5px] font-medium tracking-tight text-foreground transition-[transform,background-color] duration-300 hover:bg-white/[0.08] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 " +
+        "liquid-glass group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-4 py-2.5 text-[12.5px] font-medium tracking-tight text-foreground transition-transform duration-300 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 " +
         className
       }
     >

@@ -64,7 +64,7 @@ export default function TimelinePage() {
         >
           <Link
             href="/"
-            className="liquid-glass liquid-glass-edge group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em] text-foreground/80 transition-[transform,color] duration-300 hover:text-foreground active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            className="liquid-glass group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em] text-foreground/80 transition-[transform,color] duration-300 hover:text-foreground active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
           >
             <span aria-hidden className="liquid-glass-sheen" />
             <span aria-hidden className="liquid-glass-noise" />
