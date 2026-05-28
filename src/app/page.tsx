@@ -48,19 +48,19 @@ export default function Home() {
         />
       )}
 
-      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[20%] z-20 flex justify-center">
         <div className="pointer-events-auto flex items-center gap-6">
           <LiquidGlassButton
             size="lg"
             className="h-14 px-8 text-lg tracking-wide"
           >
-            Enter Portfolio
+            Background
           </LiquidGlassButton>
           <LiquidGlassButton
             size="lg"
             className="h-14 px-8 text-lg tracking-wide"
           >
-            Get in Touch
+            Work
           </LiquidGlassButton>
         </div>
       </div>
