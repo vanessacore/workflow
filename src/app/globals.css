@@ -265,6 +265,12 @@
   0%, 100% { opacity: var(--star-min, 0.25); transform: scale(1); }
   50% { opacity: var(--star-max, 1); transform: scale(1.4); }
 }
+@keyframes glass-sheen {
+  0%   { background-position: 150% 0; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { background-position: -50% 0; opacity: 0; }
+}
 
 .animate-drift { animation: drift 18s ease-in-out infinite; }
 .animate-drift-slow { animation: drift-slow 26s ease-in-out infinite; }

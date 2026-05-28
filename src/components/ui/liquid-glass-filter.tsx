@@ -40,11 +40,11 @@ export function LiquidGlassFilter() {
             seed={7}
             result="noise"
           />
-          <feGaussianBlur in="noise" stdDeviation="2.2" result="softNoise" />
+          <feGaussianBlur in="noise" stdDeviation="2" result="softNoise" />
           <feDisplacementMap
             in="SourceGraphic"
             in2="softNoise"
-            scale={52}
+            scale={110}
             xChannelSelector="R"
             yChannelSelector="G"
           />
@@ -52,24 +52,24 @@ export function LiquidGlassFilter() {
 
         <filter
           id="liquid-glass-active"
-          x="-25%"
-          y="-25%"
-          width="150%"
-          height="150%"
+          x="-30%"
+          y="-30%"
+          width="160%"
+          height="160%"
           colorInterpolationFilters="sRGB"
         >
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.02 0.026"
+            baseFrequency="0.022 0.03"
             numOctaves={2}
             seed={11}
             result="noise"
           />
-          <feGaussianBlur in="noise" stdDeviation="1.6" result="softNoise" />
+          <feGaussianBlur in="noise" stdDeviation="1.4" result="softNoise" />
           <feDisplacementMap
             in="SourceGraphic"
             in2="softNoise"
-            scale={92}
+            scale={170}
             xChannelSelector="R"
             yChannelSelector="G"
           />
