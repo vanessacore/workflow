@@ -224,32 +224,6 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
-
-}
-
-/* Liquid-glass backdrop. Lives outside @layer utilities so Lightning CSS
-   doesn't dedupe -webkit-backdrop-filter against backdrop-filter — when
-   both were inside the layer, only the prefixed version was emitted.
-   -webkit- variant declared FIRST so that the unprefixed (modern,
-   correct) declaration wins on browsers that support both. */
-.glass-surface {
-  -webkit-backdrop-filter: blur(36px) saturate(180%);
-  backdrop-filter: blur(36px) saturate(180%);
-}
-@supports (backdrop-filter: url(#liquid-glass)) or
-  (-webkit-backdrop-filter: url(#liquid-glass)) {
-  .glass-surface {
-    /* Blur the backdrop first, then warp the blurred result. Reversing
-       the order would let the post-displacement blur smear the warping
-       away entirely. */
-    -webkit-backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
-    backdrop-filter: blur(32px) saturate(180%) url(#liquid-glass);
-  }
-  .glass-surface[data-pressed="true"] {
-    -webkit-backdrop-filter: blur(26px) saturate(190%)
-      url(#liquid-glass-active);
-    backdrop-filter: blur(26px) saturate(190%) url(#liquid-glass-active);
-  }
 }
 
 @keyframes drift {
@@ -271,12 +245,6 @@
 @keyframes twinkle {
   0%, 100% { opacity: var(--star-min, 0.25); transform: scale(1); }
   50% { opacity: var(--star-max, 1); transform: scale(1.4); }
-}
-@keyframes glass-sheen {
-  0%   { background-position: 150% 0; opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { background-position: -50% 0; opacity: 0; }
 }
 
 .animate-drift { animation: drift 18s ease-in-out infinite; }

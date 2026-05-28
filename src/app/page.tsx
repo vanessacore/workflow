@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Spline from "@splinetool/react-spline";
-import { LiquidGlassButton } from "@/components/ui/liquid-glass-button";
 
 const SCENES = {
   sm: "https://prod.spline.design/zWAjf7IWbf-raUMt/scene.splinecode",
@@ -47,23 +46,6 @@ export default function Home() {
           style={{ width: "100%", height: "100%" }}
         />
       )}
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-[20%] z-20 flex justify-center">
-        <div className="pointer-events-auto flex items-center gap-6">
-          <LiquidGlassButton
-            size="lg"
-            className="h-14 px-8 text-lg tracking-wide"
-          >
-            Background
-          </LiquidGlassButton>
-          <LiquidGlassButton
-            size="lg"
-            className="h-14 px-8 text-lg tracking-wide"
-          >
-            Work
-          </LiquidGlassButton>
-        </div>
-      </div>
     </div>
   );
 }

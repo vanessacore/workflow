@@ -4,7 +4,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Atmosphere } from "@/components/site/atmosphere";
 import { ScrollProgress } from "@/components/site/scroll-progress";
-import { LiquidGlassFilter } from "@/components/ui/liquid-glass-filter";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -64,7 +63,6 @@ export default function RootLayout({
       )}
     >
       <body className="relative min-h-full bg-background text-foreground overflow-x-hidden">
-        <LiquidGlassFilter />
         <Atmosphere />
         <ScrollProgress />
         <main className="relative z-10 flex flex-col">{children}</main>
