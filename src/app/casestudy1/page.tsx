@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   motion,
   useReducedMotion,
@@ -103,6 +103,15 @@ const slides: Slide[] = [
   },
 ];
 
+// How long a single snap animation is allowed to take before we accept the
+// next wheel/key/swipe input. Tuned to feel decisive but not sticky.
+const SNAP_LOCK_MS = 750;
+// Ignore wheel jitter below this magnitude — touchpad inertia trails off
+// with many tiny deltas after a flick.
+const WHEEL_MIN_DELTA = 4;
+// Touch swipe distance needed to count as a slide change.
+const TOUCH_THRESHOLD = 40;
+
 export default function CaseStudy1Page() {
   const reduce = useReducedMotion();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -127,12 +136,152 @@ export default function CaseStudy1Page() {
     ["0vw", `-${(slides.length - 1) * 100}vw`],
   );
 
+  // Page-snap controller. We hijack wheel/keyboard/touch on desktop and
+  // animate window.scrollTo to one of N discrete scroll positions — one per
+  // slide — so each input gesture moves exactly one slide instead of free
+  // scrolling. The existing useScroll → useSpring → x chain still drives the
+  // horizontal motion; it just gets fed discrete scroll targets now.
+  const scrollToIndex = useCallback(
+    (i: number) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const trackTop = window.scrollY + rect.top;
+      const totalScroll = el.offsetHeight - window.innerHeight;
+      if (totalScroll <= 0) return;
+      const N = slides.length;
+      const clamped = Math.max(0, Math.min(N - 1, i));
+      const targetY = trackTop + (clamped / (N - 1)) * totalScroll;
+      window.scrollTo({
+        top: targetY,
+        behavior: reduce ? "auto" : "smooth",
+      });
+    },
+    [reduce],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const N = slides.length;
+    const desktopMq = window.matchMedia("(min-width: 48rem)");
+    const isDesktop = () => desktopMq.matches;
+
+    const getCurrentIndex = () => {
+      const el = trackRef.current;
+      if (!el) return 0;
+      const rect = el.getBoundingClientRect();
+      const trackTop = window.scrollY + rect.top;
+      const totalScroll = el.offsetHeight - window.innerHeight;
+      if (totalScroll <= 0) return 0;
+      const progress = (window.scrollY - trackTop) / totalScroll;
+      return Math.max(0, Math.min(N - 1, Math.round(progress * (N - 1))));
+    };
+
+    let locked = false;
+    let unlockTimer: number | undefined;
+    const lock = () => {
+      locked = true;
+      if (unlockTimer) window.clearTimeout(unlockTimer);
+      unlockTimer = window.setTimeout(
+        () => {
+          locked = false;
+        },
+        reduce ? 0 : SNAP_LOCK_MS,
+      );
+    };
+
+    const advance = (delta: number) => {
+      if (locked) return;
+      const next = getCurrentIndex() + delta;
+      scrollToIndex(next);
+      lock();
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!isDesktop()) return;
+      // We are the entire page's content; always intercept on desktop so the
+      // scroll always feels paged rather than free.
+      e.preventDefault();
+      if (locked) return;
+      const delta =
+        Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (Math.abs(delta) < WHEEL_MIN_DELTA) return;
+      advance(Math.sign(delta));
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (!isDesktop()) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (
+        e.key === "ArrowRight" ||
+        e.key === "ArrowDown" ||
+        e.key === "PageDown" ||
+        e.key === " "
+      ) {
+        e.preventDefault();
+        advance(1);
+      } else if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowUp" ||
+        e.key === "PageUp"
+      ) {
+        e.preventDefault();
+        advance(-1);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        if (!locked) {
+          scrollToIndex(0);
+          lock();
+        }
+      } else if (e.key === "End") {
+        e.preventDefault();
+        if (!locked) {
+          scrollToIndex(N - 1);
+          lock();
+        }
+      }
+    };
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (!isDesktop()) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!isDesktop()) return;
+      const dx = touchStartX - e.changedTouches[0].clientX;
+      const dy = touchStartY - e.changedTouches[0].clientY;
+      const d = Math.abs(dy) > Math.abs(dx) ? dy : dx;
+      if (Math.abs(d) < TOUCH_THRESHOLD) return;
+      advance(d > 0 ? 1 : -1);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      if (unlockTimer) window.clearTimeout(unlockTimer);
+    };
+  }, [reduce, scrollToIndex]);
+
   return (
     <div className="relative w-full">
       <TopBar total={slides.length} progress={smooth} />
 
       {/* The tall scroll track. Height = N * 100vh so we have enough scroll
-          distance to traverse all slides while the inner stage stays sticky. */}
+          distance to traverse all slides while the inner stage stays sticky.
+          The track height also gives us the N discrete scroll positions we
+          snap between on each wheel/key/swipe input. */}
       <div
         ref={trackRef}
         className="relative hidden md:block"
@@ -148,7 +297,11 @@ export default function CaseStudy1Page() {
             ))}
           </motion.div>
 
-          <SlideIndicators count={slides.length} progress={smooth} />
+          <SlideIndicators
+            count={slides.length}
+            progress={smooth}
+            onSelect={scrollToIndex}
+          />
         </div>
       </div>
 
@@ -338,14 +491,22 @@ function TopBar({
 function SlideIndicators({
   count,
   progress,
+  onSelect,
 }: {
   count: number;
   progress: ReturnType<typeof useSpring>;
+  onSelect: (index: number) => void;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-2">
+    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-2">
       {Array.from({ length: count }).map((_, i) => (
-        <Indicator key={i} index={i} count={count} progress={progress} />
+        <Indicator
+          key={i}
+          index={i}
+          count={count}
+          progress={progress}
+          onSelect={onSelect}
+        />
       ))}
     </div>
   );
@@ -355,24 +516,29 @@ function Indicator({
   index,
   count,
   progress,
+  onSelect,
 }: {
   index: number;
   count: number;
   progress: ReturnType<typeof useSpring>;
+  onSelect: (index: number) => void;
 }) {
   // Each dot lights up when the scroll progress is within its slice.
   const start = (index - 0.5) / (count - 1);
   const end = (index + 0.5) / (count - 1);
   const opacity = useTransform(progress, (v) =>
-    v >= start && v <= end ? 1 : 0.25,
+    v >= start && v <= end ? 1 : 0.35,
   );
-  const scale = useTransform(progress, (v) =>
-    v >= start && v <= end ? 1.4 : 1,
+  const width = useTransform(progress, (v) =>
+    v >= start && v <= end ? 32 : 16,
   );
   return (
-    <motion.span
-      style={{ opacity, scale }}
-      className="block h-1 w-6 rounded-full bg-white"
+    <motion.button
+      type="button"
+      aria-label={`Go to slide ${index + 1}`}
+      onClick={() => onSelect(index)}
+      style={{ opacity, width }}
+      className="block h-1 rounded-full bg-white transition-colors hover:bg-white"
     />
   );
 }
