@@ -475,7 +475,7 @@ function TopBar({
         className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em] text-foreground/75 backdrop-blur-md transition-colors hover:border-white/25 hover:text-foreground"
       >
         <BackArrow />
-        Index
+        Back to home
       </Link>
       <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 text-[11px] uppercase tracking-[0.28em] text-foreground/65 backdrop-blur-md md:inline-flex">
         <span className="font-mono text-foreground/85">
@@ -523,26 +523,27 @@ function Indicator({
   progress: ReturnType<typeof useSpring>;
   onSelect: (index: number) => void;
 }) {
-  // Each dot lights up when the scroll progress is within its slice.
+  // Each dot lights up when the scroll progress is within its slice. Inactive
+  // indicators are tight circles; the active one expands into a wider pill.
   const start = (index - 0.5) / (count - 1);
   const end = (index + 0.5) / (count - 1);
   const opacity = useTransform(progress, (v) =>
-    v >= start && v <= end ? 1 : 0.35,
+    v >= start && v <= end ? 1 : 0.4,
   );
   const width = useTransform(progress, (v) =>
-    v >= start && v <= end ? 32 : 16,
+    v >= start && v <= end ? 32 : 8,
   );
   return (
     <button
       type="button"
       aria-label={`Go to slide ${index + 1}`}
       onClick={() => onSelect(index)}
-      className="group inline-flex items-center justify-center px-0.5 py-3 cursor-pointer"
+      className="group inline-flex items-center justify-center px-1.5 py-3 cursor-pointer"
     >
       <motion.span
         aria-hidden
         style={{ opacity, width }}
-        className="block h-1 rounded-full bg-white transition-opacity group-hover:opacity-100"
+        className="block h-2 rounded-full bg-white transition-opacity group-hover:opacity-100"
       />
     </button>
   );
