@@ -510,7 +510,7 @@ function SlideIndicators({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-4">
+    <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-2">
       {Array.from({ length: count }).map((_, i) => (
         <Indicator
           key={i}
