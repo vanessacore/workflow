@@ -533,13 +533,18 @@ function Indicator({
     v >= start && v <= end ? 32 : 16,
   );
   return (
-    <motion.button
+    <button
       type="button"
       aria-label={`Go to slide ${index + 1}`}
       onClick={() => onSelect(index)}
-      style={{ opacity, width }}
-      className="block h-1 rounded-full bg-white transition-colors hover:bg-white"
-    />
+      className="group inline-flex items-center justify-center px-1.5 py-3 cursor-pointer"
+    >
+      <motion.span
+        aria-hidden
+        style={{ opacity, width }}
+        className="block h-1 rounded-full bg-white transition-opacity group-hover:opacity-100"
+      />
+    </button>
   );
 }
 
