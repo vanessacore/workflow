@@ -1,0 +1,96 @@
+import type { CaseStudySlide } from "@/components/site/case-study-types";
+
+export const metaRlMapsSlides: CaseStudySlide[] = [
+  {
+    index: "00",
+    eyebrow: "Meta RL · Maps",
+    title: "Local search on —",
+    italic: "display glasses.",
+    body: "Designing maps and place discovery for Ray-Ban Meta display glasses — a glanceable layer for where you are, where you're headed, and what's worth a detour, without pulling you out of the street.",
+    meta: [
+      { label: "Role", value: "Product Designer" },
+      { label: "Org", value: "Meta Reality Labs" },
+      { label: "Product", value: "RBM Display · Maps" },
+      { label: "Focus", value: "Local search · Navigation" },
+    ],
+    accent: "from-sky-400/30 via-cyan-300/15 to-transparent",
+  },
+  {
+    index: "01",
+    eyebrow: "Context",
+    title: "The world moves —",
+    italic: "your phone shouldn't be the map.",
+    body: "Walking with a phone as navigator fractures attention: unlock, orient, scroll, repeat. Display glasses promised a different contract — persistent spatial context in peripheral vision, with depth only when you ask for it.",
+    meta: [
+      { label: "Constraint", value: "Single-eye display" },
+      { label: "Constraint", value: "Outdoor readability" },
+      { label: "North star", value: "Heads-up > heads-down" },
+    ],
+    accent: "from-blue-400/25 via-indigo-300/15 to-transparent",
+  },
+  {
+    index: "02",
+    eyebrow: "Discovery",
+    title: "Field studies —",
+    italic: "across unfamiliar cities.",
+    body: "We shadowed travelers and locals navigating on foot — coffee runs, meeting hops, last-block arrival anxiety. The pattern was consistent: people wanted answers before they formed a query. Search had to feel like recognition, not interrogation.",
+    meta: [
+      { label: "Sessions", value: "28 on-foot studies" },
+      { label: "Cities", value: "SF · NYC · London" },
+      { label: "Modes", value: "Walk · Transit · Micro-mobility" },
+    ],
+    accent: "from-teal-300/25 via-emerald-300/15 to-transparent",
+  },
+  {
+    index: "03",
+    eyebrow: "Platform",
+    title: "Designing inside —",
+    italic: "the display glasses canvas.",
+    body: "RBM display hardware imposes a narrow field, tight brightness budgets, and gesture vocabulary shared with capture and calls. Maps UI had to earn every pixel — hierarchy through luminance, motion, and temporal persistence instead of dense panels.",
+    meta: [
+      { label: "Display", value: "Monocular HUD" },
+      { label: "Input", value: "Touch temple · Voice" },
+      { label: "Partners", value: "Maps · Search · RL platform" },
+    ],
+    accent: "from-violet-400/20 via-blue-300/15 to-transparent",
+  },
+  {
+    index: "04",
+    eyebrow: "Local search",
+    title: "Places that —",
+    italic: "meet you on the corner.",
+    body: "We reframed local search as ambient pins and ranked cards that surface by proximity, time, and intent signals — open now, on your route, saved before. Query became a fallback; the default was a curated horizon of relevant places.",
+    meta: [
+      { label: "Patterns", value: "Ambient pins · Route shelf" },
+      { label: "Signals", value: "Time · Distance · History" },
+      { label: "Escalation", value: "Glance → Detail → Phone handoff" },
+    ],
+    accent: "from-amber-300/22 via-yellow-300/12 to-transparent",
+  },
+  {
+    index: "05",
+    eyebrow: "Navigation",
+    title: "Turn-by-turn —",
+    italic: "without the turn-by-turn feeling.",
+    body: "Navigation on glass is choreography: early cues at the edge of vision, confirmation at decision points, silence on straightaways. We prototyped lane-level sparingly, favoring semantic landmarks and haptic punctuation over constant instruction.",
+    meta: [
+      { label: "Cue types", value: "Landmark · Bearing · Time" },
+      { label: "Prototypes", value: "24 motion studies" },
+      { label: "Handoff", value: "Seamless phone deep-link" },
+    ],
+    accent: "from-orange-300/22 via-rose-300/12 to-transparent",
+  },
+  {
+    index: "06",
+    eyebrow: "Outcome",
+    title: "What shipped —",
+    italic: "and what we learned.",
+    body: "Pilot participants reached destinations with fewer phone checks and reported higher situational awareness. The work informed maps-on-glass patterns reused across RL — especially the rule that search results should feel discovered, not delivered.",
+    meta: [
+      { label: "Phone checks", value: "−41% on route" },
+      { label: "Task success", value: "+29% first try" },
+      { label: "Awareness", value: "+54% self-report" },
+    ],
+    accent: "from-cyan-300/25 via-sky-300/15 to-transparent",
+  },
+];
