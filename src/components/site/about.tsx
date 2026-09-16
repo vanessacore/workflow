@@ -5,13 +5,13 @@ import { Reveal, StaggerGroup, StaggerItem } from "./reveal";
 
 const tags = [
   "Product Design",
-  "AI Interfaces",
-  "Wearables",
-  "Prototyping",
-  "Motion",
-  "Design Systems",
-  "Industrial",
+  "AI-native UX",
+  "0→1",
   "Research",
+  "Prototyping",
+  "Design Systems",
+  "Growth loops",
+  "Handoff & QA",
 ];
 
 export function About() {
@@ -24,11 +24,11 @@ export function About() {
           </Reveal>
           <Reveal delay={0.05}>
             <h2 className="mt-5 text-balance text-3xl font-medium leading-[1.05] tracking-[-0.025em] sm:text-4xl md:text-5xl">
-              <span className="text-gradient">Designing for moments </span>
+              <span className="text-gradient">A journalist who learned to </span>
               <span className="font-serif italic text-foreground/85">
-                that disappear
+                ship products
               </span>
-              <span className="text-gradient"> into life.</span>
+              <span className="text-gradient">.</span>
             </h2>
           </Reveal>
         </div>
@@ -36,18 +36,20 @@ export function About() {
         <div className="space-y-6 lg:col-span-7">
           <Reveal delay={0.1}>
             <p className="text-pretty text-base leading-relaxed text-foreground/75 md:text-[17px]">
-              I&apos;m a product designer at Meta working across AI and the
-              next generation of wearables. My practice sits between the cinematic
-              and the intimate — building interfaces that feel inevitable, like
-              they were always there, waiting for you.
+              I&apos;m Vanessa Hu — I go by Vanessa Core here — a product
+              designer at Meta. I spent four years in economic journalism and
+              communications before retraining in HCI at California College of
+              the Arts. That path still shows up in the work: I listen first,
+              then design the smallest system that changes a behavior.
             </p>
           </Reveal>
           <Reveal delay={0.2}>
             <p className="text-pretty text-base leading-relaxed text-foreground/55">
-              I started in industrial design, moved through software, and now
-              spend most of my time prototyping the seam between hardware,
-              gesture, voice and intelligence. I believe the best technology
-              is the kind you forget you&apos;re using.
+              Before Meta I led 0→1 and growth work across biotech, grocery
+              ecommerce, and fintech — a Covid diagnostics app, Weee!&apos;s
+              in-app feedback system (1k+ NPS responses a day), and Gilded&apos;s
+              gold-trading experience. I care about research, clear handoff, and
+              designs that survive contact with engineering.
             </p>
           </Reveal>
 
@@ -71,15 +73,12 @@ export function About() {
           <Reveal delay={0.4}>
             <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
               {[
-                { k: "Now", v: "Senior Product Designer · Meta" },
-                { k: "Before", v: "Apple · IDEO · Frog" },
-                { k: "Based", v: "Brooklyn / SF" },
-                { k: "Speaks", v: "Design, prototypes, gesture" },
+                { k: "Now", v: "Product Designer · Meta" },
+                { k: "Before", v: "Gilded · Weee! · Pinpoint" },
+                { k: "Based", v: "San Francisco" },
+                { k: "Trained", v: "CCA · MDes, HCI" },
               ].map((it) => (
-                <div
-                  key={it.k}
-                  className="bg-black/40 p-4"
-                >
+                <div key={it.k} className="bg-black/40 p-4">
                   <div className="text-[10.5px] uppercase tracking-[0.22em] text-foreground/40">
                     {it.k}
                   </div>

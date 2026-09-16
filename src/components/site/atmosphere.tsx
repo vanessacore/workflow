@@ -119,7 +119,7 @@ export function Atmosphere() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-30 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[5] overflow-hidden"
     >
       {layers.map((layer, i) => (
         <ParallaxLayer

@@ -7,27 +7,23 @@ import { Reveal } from "./reveal";
 const tenets = [
   {
     n: "I.",
-    title: "Inevitability over invention.",
-    body:
-      "The best products feel discovered, not designed. I work toward the version of a feature that, once seen, seems like the only one that could have existed.",
+    title: "Listen before you draw.",
+    body: "Journalism trained me to interview. Design trained me to ship. I still start with what people actually do — six Weee! customers, Gilded usability sessions — before a pixel is a decision.",
   },
   {
     n: "II.",
     title: "Calm beats clever.",
-    body:
-      "Cleverness is a tax on attention. I design for the quiet competence of a tool that doesn't ask for applause.",
+    body: "Cleverness is a tax on attention. I design for the quiet competence of a tool that doesn't ask for applause — especially when the product is AI.",
   },
   {
     n: "III.",
-    title: "Motion is meaning.",
-    body:
-      "Every transition is an explanation. I treat easing curves and timing as part of the product copy.",
+    title: "A mock isn't finished until it can be QA'd.",
+    body: "I write handoff notes and product-design QA guidelines. The craft includes the week after visual design, when engineering is in the file.",
   },
   {
     n: "IV.",
-    title: "The body is the canvas.",
-    body:
-      "When the screen disappears, design becomes posture, gesture, and breath. I study the wearer as carefully as the wearable.",
+    title: "Count the change.",
+    body: "10× a response-rate goal. Ratings up 200%. Inquiries up 40%. If we can't say what moved, we didn't finish the work — we decorated it.",
   },
 ];
 
@@ -51,8 +47,8 @@ export function Philosophy() {
 
         <Reveal delay={0.15}>
           <p className="mt-5 max-w-2xl text-pretty text-base leading-relaxed text-foreground/55">
-            Four tenets I return to. Less a method than a posture — the
-            way I hold a problem before I touch it.
+            Four tenets I return to. Less a method than a posture — the way I
+            hold a problem before I touch it.
           </p>
         </Reveal>
 

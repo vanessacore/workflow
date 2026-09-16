@@ -6,72 +6,69 @@ import { Reveal } from "./reveal";
 
 const timeline = [
   {
-    year: "2025",
-    org: "Meta · AI",
-    role: "Senior Product Designer",
+    year: "2022",
+    org: "Meta",
+    role: "Product Designer",
     blurb:
-      "Leading the design of an ambient, multimodal assistant across smartglasses, mobile, and home. Defining the gesture vocabulary, latency-aware motion, and the quiet feedback loops for AI on the body.",
-    chips: ["Multimodal AI", "Smartglasses", "Motion"],
-  },
-  {
-    year: "2023",
-    org: "Meta · Reality Labs",
-    role: "Product Designer · Wearables",
-    blurb:
-      "Designed on-glass UI grammar, off-axis interaction patterns, and the industrial language for a research wearable program. Shipped a neural input prototype with the brain–computer team.",
-    chips: ["AR", "Neural Input", "Industrial"],
+      "Designing AI-native product experiences. Four years shipping with cross-functional partners — the details stay inside the building; the craft is systems, restraint, and interfaces people can finish.",
+    chips: ["AI-native", "Systems", "0→1 & 1→n"],
   },
   {
     year: "2021",
-    org: "Apple · Health",
+    org: "Gilded",
     role: "Product Designer",
     blurb:
-      "Worked on the soft edges of health — moments where a watch becomes a companion, not a clinician. Led design for two unreleased experiments in passive sensing.",
-    chips: ["Health", "Sensing", "Watch"],
+      "End-to-end B2C and B2B for a digital gold-trading startup. Redesigned signup and the purchase / assets experience, visualized financial information, and ran design education for engineering and QA.",
+    chips: ["Fintech", "B2B + B2C", "Handoff"],
   },
   {
-    year: "2018",
-    org: "IDEO · Frog",
-    role: "Industrial &amp; Interaction Designer",
+    year: "2021",
+    org: "Weee!",
+    role: "Product Designer",
     blurb:
-      "Cut my teeth on consumer hardware, hospitality robotics, and a generation of speculative wearables that never made the lab door — but taught me everything.",
-    chips: ["Industrial", "Speculative", "Hardware"],
+      "Designed the in-app feedback system — continuous NPS, product and delivery ratings, and app-store review prompts. Hit 1k+ NPS responses a day (10× the goal) and lifted store ratings ~200% in three months.",
+    chips: ["NPS", "Growth", "Ecommerce"],
+  },
+  {
+    year: "2020",
+    org: "Pinpoint Science",
+    role: "Product Designer",
+    blurb:
+      "0→1 mobile app for a 30-second Covid-19 antigen test. Redesigned the company site and helped lift investor and distributor inquiries by 40% in a month.",
+    chips: ["Biotech", "0→1", "Mobile"],
   },
 ];
 
 const pillars = [
   {
-    title: "AI that listens before it speaks",
-    body:
-      "Designing assistants that earn attention through restraint — anticipating less, observing more, intervening only when it matters.",
+    title: "Research that changes the brief",
+    body: "At Weee! and Gilded I used interviews and usability findings to pick the interaction — slider over a number list, simplified signup over more pitch — not to decorate a decided spec.",
   },
   {
-    title: "Hardware as choreography",
-    body:
-      "Buttons, gestures, glances. A wearable is a body language. I design the rhythm before the resolution.",
+    title: "Handoff as a design material",
+    body: "I write QA guidelines and run sessions for engineering. A mock that can't be implemented cleanly isn't finished.",
   },
   {
-    title: "Privacy as a design material",
-    body:
-      "On-device by default, legibly. Trust isn't a setting — it's the shape of the product.",
+    title: "Impact you can count",
+    body: "1k+ daily NPS responses. 10× a leadership goal. Store ratings up 200%. Website inquiries up 40%. I design for the number and the feeling.",
   },
 ];
 
-export function AiWearables() {
+export function Experience() {
   return (
     <Section id="experience">
       <Reveal>
         <SectionHeading
-          eyebrow="AI · Wearables"
+          eyebrow="Experience"
           title={
             <>
-              <span className="text-gradient">Eight years at the edge of </span>
+              <span className="text-gradient">Seven years of shipping </span>
               <span className="font-serif italic text-foreground/85">
-                ambient intelligence.
+                across AI, commerce, and health.
               </span>
             </>
           }
-          description="From industrial design studios to Meta's Reality Labs, my work has tracked a single thread: how technology leaves the screen and joins the body."
+          description="From a 0→1 diagnostics app to Meta. One thread: make the next action obvious, then get out of the way."
         />
       </Reveal>
 
@@ -101,7 +98,7 @@ export function AiWearables() {
                   <span>{t.org}</span>
                 </div>
                 <h3 className="mt-1.5 text-base font-medium tracking-tight text-foreground md:text-lg">
-                  {t.role.replace(/&amp;/g, "&")}
+                  {t.role}
                 </h3>
                 <p className="mt-1.5 max-w-xl text-pretty text-[13px] leading-relaxed text-foreground/60 md:text-[13.5px]">
                   {t.blurb}
@@ -125,7 +122,7 @@ export function AiWearables() {
           <div className="space-y-3">
             <Reveal>
               <div className="text-[10.5px] uppercase tracking-[0.22em] text-foreground/40">
-                What I&apos;m known for
+                How I work
               </div>
             </Reveal>
             {pillars.map((p, i) => (
