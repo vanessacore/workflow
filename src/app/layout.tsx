@@ -23,21 +23,21 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Vanessa Core — Product Designer · AI & Wearables",
+  title: "Vanessa Core — Product Designer",
   description:
-    "Portfolio of Vanessa Core, a product designer crafting AI experiences and next-generation wearables at Meta. Cinematic interfaces, ambient intelligence, and the future of human–computer interaction.",
+    "Portfolio of Vanessa Hu (Vanessa Core), a product designer at Meta. AI-native products, 0→1 diagnostics, fintech, and growth systems — including Weee!'s in-app NPS.",
   metadataBase: new URL("https://vanessahuh.com"),
   openGraph: {
-    title: "Vanessa Core — Product Designer · AI & Wearables",
+    title: "Vanessa Core — Product Designer",
     description:
-      "Crafting AI experiences and next-generation wearables. A portfolio in cinematic detail.",
+      "AI-native product design. Shipped work across Meta, Weee!, Gilded, and Pinpoint Science.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vanessa Core — Product Designer · AI & Wearables",
+    title: "Vanessa Core — Product Designer",
     description:
-      "Crafting AI experiences and next-generation wearables.",
+      "AI-native product design. Shipped work across Meta, Weee!, Gilded, and Pinpoint Science.",
   },
 };
 

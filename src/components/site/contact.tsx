@@ -6,20 +6,33 @@ import { Section, Eyebrow } from "./section";
 import { Reveal } from "./reveal";
 
 const channels = [
-  { label: "Email", value: "hello@vanessacore.design", href: "mailto:hello@vanessacore.design" },
-  { label: "Read", value: "Notes & essays", href: "#" },
-  { label: "Connect", value: "LinkedIn", href: "#" },
-  { label: "Off-the-record", value: "Signal · @vanessa.42", href: "#" },
+  {
+    label: "Email",
+    value: "vanessacore@gmail.com",
+    href: "mailto:vanessacore@gmail.com",
+  },
+  {
+    label: "Connect",
+    value: "LinkedIn",
+    href: "https://www.linkedin.com/in/vannylovedesign",
+  },
+  {
+    label: "Writing",
+    value: "Medium essays",
+    href: "https://medium.com/@dhu",
+  },
+  {
+    label: "NPS case study",
+    value: "Design Bootcamp",
+    href: "https://medium.com/design-bootcamp/nps-design-for-e-commerce-case-study-f54538554c04",
+  },
 ];
 
 export function Contact() {
   return (
     <Section id="contact" className="pb-32 md:pb-20">
       <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-white/[0.02] p-8 backdrop-blur-sm md:p-10 lg:p-14">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-        >
+        <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute -top-40 left-1/4 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle,_rgba(180,160,255,0.18),_transparent_60%)] blur-3xl" />
           <div className="absolute -bottom-40 right-1/4 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,_rgba(120,200,255,0.12),_transparent_60%)] blur-3xl" />
           <div
@@ -47,9 +60,8 @@ export function Contact() {
           </Reveal>
           <Reveal delay={0.15}>
             <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-foreground/60">
-              I take on a small number of collaborations each year — usually
-              0→1 product work at the intersection of AI, hardware, and the
-              body. If that sounds like you, write me a paragraph.
+              I&apos;m based in San Francisco. The most useful note is a
+              paragraph: the product, the constraint, and why it matters now.
             </p>
           </Reveal>
 
@@ -60,15 +72,14 @@ export function Contact() {
               className="mt-8 inline-block"
             >
               <Link
-                href="mailto:hello@vanessacore.design"
+                href="mailto:vanessacore@gmail.com"
                 className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-white px-6 py-4 text-[14px] font-medium tracking-tight text-black transition-all"
               >
-                <span className="absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.5),_transparent_70%)] opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inset-0 animate-ping rounded-full bg-emerald-500/60" />
                   <span className="relative h-2 w-2 rounded-full bg-emerald-500" />
                 </span>
-                hello@vanessacore.design
+                vanessacore@gmail.com
                 <svg
                   width="14"
                   height="14"
@@ -93,6 +104,8 @@ export function Contact() {
               <motion.a
                 key={c.label}
                 href={c.href}
+                target={c.href.startsWith("http") ? "_blank" : undefined}
+                rel={c.href.startsWith("http") ? "noreferrer" : undefined}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}

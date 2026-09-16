@@ -40,7 +40,7 @@ export function Eyebrow({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/65 backdrop-blur-md",
+        "inline-flex w-fit max-w-full items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/65 backdrop-blur-md",
         className
       )}
     >
@@ -64,7 +64,7 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4",
+        "flex flex-col items-start gap-4",
         align === "center" && "items-center text-center"
       )}
     >
