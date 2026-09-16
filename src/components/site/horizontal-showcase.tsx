@@ -372,8 +372,7 @@ function ScrollHashRouter({
     }
 
     function onClick(e: MouseEvent) {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
-        return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const path = e.composedPath();
       let anchor: HTMLAnchorElement | null = null;
       for (const el of path) {
@@ -389,6 +388,7 @@ function ScrollHashRouter({
       if (!id) return;
       if (jump(id)) {
         e.preventDefault();
+        e.stopPropagation();
         history.replaceState(null, "", `#${id}`);
       }
     }
@@ -398,7 +398,7 @@ function ScrollHashRouter({
       if (id) jump(id);
     }
 
-    document.addEventListener("click", onClick);
+    document.addEventListener("click", onClick, true);
     window.addEventListener("hashchange", onHashChange);
 
     if (window.location.hash) {
@@ -409,7 +409,7 @@ function ScrollHashRouter({
     }
 
     return () => {
-      document.removeEventListener("click", onClick);
+      document.removeEventListener("click", onClick, true);
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [panels, scrollToIndex]);
