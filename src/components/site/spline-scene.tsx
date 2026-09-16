@@ -23,7 +23,7 @@ function readBucket(): Bucket {
 export function SplineScene() {
   const hostRef = useRef<HTMLDivElement>(null);
   const [bucket, setBucket] = useState<Bucket | null>(null);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
 
   useEffect(() => {
     const update = () => setBucket(readBucket());
