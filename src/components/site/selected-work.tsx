@@ -112,13 +112,10 @@ function ProjectCta({ project }: { project: Project }) {
   }
 
   return (
-    <Link
-      href={project.href}
-      className="group/btn inline-flex items-center gap-1.5 text-[11.5px] font-medium text-foreground/75 transition-colors hover:text-foreground"
-    >
+    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-foreground/75">
       {project.cta ?? "Case study"}
-      <span className="relative h-px w-5 bg-white/30 transition-all group-hover/btn:w-8 group-hover/btn:bg-white/70" />
-    </Link>
+      <span className="relative h-px w-5 bg-white/30 transition-all group-hover:w-8 group-hover:bg-white/70" />
+    </span>
   );
 }
 
@@ -179,6 +176,13 @@ function ProjectTile({ project, index }: { project: Project; index: number }) {
           </div>
         </div>
       </div>
+      {project.href ? (
+        <Link
+          href={project.href}
+          className="absolute inset-0 z-20"
+          aria-label={`${project.title} case study`}
+        />
+      ) : null}
     </motion.article>
   );
 }
@@ -252,6 +256,13 @@ function ProjectCard({
           </div>
         </div>
       </div>
+      {project.href ? (
+        <Link
+          href={project.href}
+          className="absolute inset-0 z-20"
+          aria-label={`${project.title} case study`}
+        />
+      ) : null}
     </motion.article>
   );
 }

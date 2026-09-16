@@ -12,7 +12,7 @@ export function Hero() {
       id="top"
       className="relative isolate flex min-h-[100svh] w-full items-end overflow-hidden md:h-full md:min-h-screen"
     >
-      <div className="absolute inset-0 z-0">
+      <div className="pointer-events-none absolute inset-0 z-0 [&_canvas]:pointer-events-none">
         <SplineScene />
       </div>
 

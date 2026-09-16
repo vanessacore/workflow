@@ -216,7 +216,7 @@ export function HorizontalShowcase({
               <section
                 key={panels[i]?.id ?? i}
                 aria-label={panels[i]?.label}
-                className="relative h-screen w-screen flex-shrink-0 overflow-hidden"
+                className="relative z-10 h-screen w-screen flex-shrink-0 overflow-hidden"
               >
                 {child}
               </section>
