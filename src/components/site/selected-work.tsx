@@ -71,7 +71,7 @@ const projects: Project[] = [
 
 export function SelectedWork() {
   return (
-    <Section id="work">
+    <Section id="selected-work">
       <Reveal>
         <SectionHeading
           eyebrow="Selected Work"
@@ -179,7 +179,7 @@ function ProjectTile({ project, index }: { project: Project; index: number }) {
       {project.href ? (
         <Link
           href={project.href}
-          className="absolute inset-0 z-20"
+          className="absolute inset-0 z-20 cursor-pointer"
           aria-label={`${project.title} case study`}
         />
       ) : null}
@@ -259,7 +259,7 @@ function ProjectCard({
       {project.href ? (
         <Link
           href={project.href}
-          className="absolute inset-0 z-20"
+          className="absolute inset-0 z-20 cursor-pointer"
           aria-label={`${project.title} case study`}
         />
       ) : null}

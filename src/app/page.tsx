@@ -15,7 +15,7 @@ import {
 const panels: ShowcasePanel[] = [
   { id: "top", label: "Intro" },
   { id: "about", label: "About" },
-  { id: "work", label: "Work" },
+  { id: "selected-work", label: "Work" },
   { id: "experience", label: "Experience" },
   { id: "philosophy", label: "Philosophy" },
   { id: "contact", label: "Contact" },

@@ -53,7 +53,7 @@ export function Hero() {
           className="mt-7 flex flex-wrap items-center justify-center gap-3 md:justify-start"
         >
           <Link
-            href="#work"
+            href="#selected-work"
             className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-white px-5 py-3 text-[13.5px] font-medium tracking-tight text-black transition-all hover:bg-white/95"
           >
             View selected work

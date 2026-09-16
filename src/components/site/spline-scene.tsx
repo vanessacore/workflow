@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Spline from "@splinetool/react-spline";
 
 const SCENES = {
@@ -21,7 +21,9 @@ function readBucket(): Bucket {
 }
 
 export function SplineScene() {
+  const hostRef = useRef<HTMLDivElement>(null);
   const [bucket, setBucket] = useState<Bucket | null>(null);
+  const [inView, setInView] = useState(true);
 
   useEffect(() => {
     const update = () => setBucket(readBucket());
@@ -37,13 +39,26 @@ export function SplineScene() {
     };
   }, []);
 
-  if (!bucket) return null;
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.05 },
+    );
+    io.observe(host);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <Spline
-      key={bucket}
-      scene={SCENES[bucket]}
-      style={{ width: "100%", height: "100%" }}
-    />
+    <div ref={hostRef} className="h-full w-full">
+      {inView && bucket ? (
+        <Spline
+          key={bucket}
+          scene={SCENES[bucket]}
+          style={{ width: "100%", height: "100%", pointerEvents: "none" }}
+        />
+      ) : null}
+    </div>
   );
 }
